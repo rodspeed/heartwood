@@ -407,7 +407,7 @@ def check_title_sync(sources, existing_notes):
         else:
             # Native file is newer — push title to Heartwood note
             actions.append({
-                'action': 'title-to-cerebro',
+                'action': 'title-to-heartwood',
                 'source': source,
                 'note_filename': note_filename,
                 'old_title': note_title,
@@ -447,7 +447,7 @@ def apply_title_to_native(source, new_title, apply=False):
     return True
 
 
-def apply_title_to_cerebro(note_filename, new_title, apply=False):
+def apply_title_to_heartwood(note_filename, new_title, apply=False):
     """Update the title: field in a Heartwood note's frontmatter."""
     note_path = os.path.join(NOTES_DIR, note_filename)
     with open(note_path, 'r', encoding='utf-8') as f:
@@ -529,8 +529,8 @@ def run_sync(apply=False):
                 if ta['action'] == 'title-to-native':
                     if apply_title_to_native(ta['source'], ta['new_title'], apply=True):
                         print(f"  Synced title to native: {os.path.basename(ta['source']['path'])}")
-                elif ta['action'] == 'title-to-cerebro':
-                    if apply_title_to_cerebro(ta['note_filename'], ta['new_title'], apply=True):
+                elif ta['action'] == 'title-to-heartwood':
+                    if apply_title_to_heartwood(ta['note_filename'], ta['new_title'], apply=True):
                         print(f"  Synced title to Heartwood: {ta['note_filename']}")
             print()
 

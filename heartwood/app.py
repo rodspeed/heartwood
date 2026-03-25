@@ -427,7 +427,7 @@ def extract_typed_wikilinks(content):
 
 
 def load_ontology():
-    """Load ontology.yaml from the cerebro directory. Returns empty dict if missing."""
+    """Load ontology.yaml from the heartwood directory. Returns empty dict if missing."""
     path = os.path.join(_app_dir(), 'ontology.yaml')
     if os.path.exists(path):
         with open(path, 'r', encoding='utf-8') as f:
@@ -464,7 +464,7 @@ class Api:
             # Use a per-user temp dir for embedding cache (pgvector migration later)
             import tempfile
             user_id = getattr(storage, '_user_id', 'default')
-            cache_dir = os.path.join(tempfile.gettempdir(), 'cerebro_cache', user_id)
+            cache_dir = os.path.join(tempfile.gettempdir(), 'heartwood_cache', user_id)
             os.makedirs(cache_dir, exist_ok=True)
             cache_path = os.path.join(cache_dir, 'embeddings.json')
         else:
@@ -696,7 +696,7 @@ class Api:
         try:
             # Resolve the synced_from path relative to the Claude Code directory
             claude_code_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            # Handle paths that start with ../../ (relative to cerebro dir)
+            # Handle paths that start with ../../ (relative to heartwood dir)
             script_dir = os.path.dirname(os.path.abspath(__file__))
             source_path = os.path.normpath(os.path.join(script_dir, synced_from))
 
@@ -2931,13 +2931,13 @@ type: {note_type}
 
         Also creates a manual connection from the FAQ to the soul node.
         """
-        faq_id = 'cerebro-faq'
+        faq_id = 'heartwood-faq'
         if self._storage.note_exists(faq_id):
             return
 
         # Load from the bundled file if available, otherwise use embedded content
         faq_content = None
-        faq_path = os.path.join(os.path.dirname(__file__), 'notes', 'cerebro-faq.md')
+        faq_path = os.path.join(os.path.dirname(__file__), 'notes', 'heartwood-faq.md')
         if os.path.exists(faq_path):
             with open(faq_path, 'r', encoding='utf-8') as f:
                 faq_content = f.read()
@@ -2982,7 +2982,7 @@ Your notes are stored with Row-Level Security — every query is scoped to your 
 """
 
         try:
-            self._storage.create_note(faq_id, 'cerebro-faq.md', faq_content)
+            self._storage.create_note(faq_id, 'heartwood-faq.md', faq_content)
             # Link FAQ to soul node
             soul_id = self._storage.get_config('soul_node_id')
             if soul_id:
@@ -3999,7 +3999,7 @@ created: {today}
 name: {title}
 description: Web clip from {source_url}
 type: reference
-source: cerebro-clip
+source: heartwood-clip
 ---
 
 # {title}

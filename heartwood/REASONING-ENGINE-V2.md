@@ -988,7 +988,7 @@ Semantic uses MiniLM-L6-v2 embeddings. Structural uses PPR scores normalized to 
 **Open question resolved:** 200 notes / 983 edges produce meaningful rules via tag co-occurrence, even though path rules are limited by relation homogeneity. As typed links grow (only 15 `features_character` edges currently), path rules will become more useful.
 
 **Module:** `heartwood/link_prediction.py` (~500 lines). Same pattern as beliefs.py/revision.py. CLI: `--dry-run`, `--stats`, `--rules`, `--node`.
-**MCP tool:** `cerebro_predictions` — 7th tool in mcp_server.py.
+**MCP tool:** `heartwood_predictions` — 7th tool in mcp_server.py.
 **Pipeline:** Runs after belief revision in both `main()` and `run_reasoning_from_data()`.
 **Storage:** `.graph/link-predictions.json` — predictions, rules, graph stats.
 **Cost:** ~$0.005/run for LLM reranking (1 Haiku call). Zero cost in dry-run mode.

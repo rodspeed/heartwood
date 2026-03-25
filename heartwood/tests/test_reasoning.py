@@ -322,7 +322,7 @@ class TestReasoningMemory:
 
     FAKE_PREVIOUS_REPORT = """---
 title: "Reasoning Report"
-tags: [cerebro, reasoning]
+tags: [heartwood, reasoning]
 type: daily
 created: 2026-03-23
 ---

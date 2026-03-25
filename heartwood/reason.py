@@ -266,7 +266,7 @@ def load_graph_from_data(notes_data, connections, ontology):
 
     # Embedding cache — use temp dir for hosted mode
     import tempfile
-    cache_dir = os.path.join(tempfile.gettempdir(), 'cerebro_reason_cache')
+    cache_dir = os.path.join(tempfile.gettempdir(), 'heartwood_reason_cache')
     os.makedirs(cache_dir, exist_ok=True)
     emb_cache = EmbeddingCache(os.path.join(cache_dir, 'embeddings.json'))
     embeddings = emb_cache.get_embeddings(notes)
@@ -1285,7 +1285,7 @@ def generate_report(latent, gaps, clusters, bridges, contradictions, drift, synt
     lines = [
         '---',
         f'title: "Reasoning Report"',
-        f'tags: [cerebro, reasoning]',
+        f'tags: [heartwood, reasoning]',
         f'type: daily',
         f'created: {today}',
         '---',
@@ -1848,7 +1848,7 @@ def backup_cerebro():
     timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
     backup_dir = os.path.join(cerebro_dir, 'backups')
     os.makedirs(backup_dir, exist_ok=True)
-    zip_path = os.path.join(backup_dir, f'cerebro-backup-{timestamp}.zip')
+    zip_path = os.path.join(backup_dir, f'heartwood-backup-{timestamp}.zip')
 
     file_count = 0
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
@@ -1879,7 +1879,7 @@ def backup_cerebro():
 
     # Prune old backups — keep last 10
     backups = sorted([
-        f for f in os.listdir(backup_dir) if f.startswith('cerebro-backup-') and f.endswith('.zip')
+        f for f in os.listdir(backup_dir) if f.startswith('heartwood-backup-') and f.endswith('.zip')
     ])
     while len(backups) > 10:
         old = backups.pop(0)
