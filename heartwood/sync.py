@@ -187,15 +187,11 @@ def create_note_from_source(source):
 
     if cat == 'skill' and 'skills' not in tags:
         tags.append('skills')
-        # Auto-detect project from skill name
-        if 'hunt' in native_name or 'wardrober' in native_name:
-            if 'style' not in tags:
-                tags.append('style')
     elif cat == 'agent' and 'agent' not in tags:
         tags.append('agent')
     elif cat == 'memory':
         # Assign tags based on naming conventions
-        if 'user' in native_name or 'heritage' in native_name or 'role' in native_name:
+        if 'user' in native_name or 'role' in native_name:
             if 'user' not in tags:
                 tags.append('user')
         elif 'feedback' in native_name:
@@ -204,24 +200,6 @@ def create_note_from_source(source):
         elif 'project' in native_name:
             if 'project' not in tags:
                 tags.append('project')
-            # Detect specific project
-            if 'quant' in native_name:
-                if 'quant' not in tags:
-                    tags.append('quant')
-            elif 'fadetracker' in native_name or 'denim' in native_name:
-                if 'denim' not in tags:
-                    tags.append('denim')
-            elif 'cbt' in native_name:
-                if 'health' not in tags:
-                    tags.append('health')
-            elif 'openclaw' in native_name:
-                if 'technology' not in tags:
-                    tags.append('technology')
-    elif cat == 'quant-skill':
-        if 'quant' not in tags:
-            tags.append('quant')
-        if 'skills' not in tags:
-            tags.append('skills')
 
     # Add source reference
     rel_path = os.path.relpath(source['path'], PARENT_DIR).replace('\\', '/')
@@ -298,7 +276,7 @@ def remove_memory_index_entry(native_filename, apply=False):
     if not os.path.isfile(MEMORY_INDEX):
         return False
 
-    stem = Path(native_filename).stem  # e.g. 'feedback_no_miyake'
+    stem = Path(native_filename).stem  # e.g. 'feedback_example'
     with open(MEMORY_INDEX, 'r', encoding='utf-8') as f:
         lines = f.readlines()
 
@@ -306,7 +284,7 @@ def remove_memory_index_entry(native_filename, apply=False):
     removed = False
     for line in lines:
         # Match lines that link to this memory file, e.g.:
-        # - [No Issey Miyake pants](feedback_no_miyake.md) -- ...
+        # - [Example feedback](feedback_example.md) -- ...
         if f'({stem}.md)' in line or f'({native_filename})' in line:
             removed = True
             continue

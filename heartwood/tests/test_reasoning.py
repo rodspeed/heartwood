@@ -28,8 +28,8 @@ def _build_graph(n_notes: int) -> dict:
 
     topics = [
         ("machine learning", ["ml", "ai"], "Neural networks, gradient descent, transformers."),
-        ("vintage denim", ["fashion", "denim"], "Selvedge, indigo, fade patterns, looms."),
-        ("portfolio theory", ["finance", "quant"], "Modern portfolio theory, Sharpe ratio, risk."),
+        ("urban planning", ["design", "cities"], "Zoning, transit corridors, mixed-use development."),
+        ("behavioral economics", ["economics", "psychology"], "Prospect theory, loss aversion, nudge frameworks."),
         ("japanese culture", ["culture", "japan"], "Wabi-sabi, kintsugi, craftsmanship."),
         ("knowledge graphs", ["tech", "graphs"], "Nodes, edges, ontology, semantic search."),
     ]
@@ -355,8 +355,8 @@ _Neural network and AI development cluster._
 ## 3b. Inter-Cluster Bridges
 _Deeper themes connecting seemingly unrelated clusters._
 
-### ML ↔ Fashion (sim: 0.65)
-Pattern recognition as a shared discipline
+### ML ↔ Economics (sim: 0.65)
+Decision modeling as a shared discipline
 
 ## 4. Contradictions
 _Notes that may make conflicting claims._

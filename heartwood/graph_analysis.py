@@ -212,7 +212,7 @@ class GraphAnalysis:
     def get_community_gaps(self, resolution=1.0):
         """Find communities missing expected note types.
 
-        If a community about 'quant' topics has no 'project' type notes,
+        If a community about 'research' topics has no 'project' type notes,
         that's a structural gap worth surfacing.
         """
         communities = self.get_communities(resolution)

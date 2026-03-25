@@ -396,7 +396,7 @@ Classify each pair:
 (d) UNRELATED — false positive, claims are not about the same thing.
 
 Common false positives to watch for:
-- Narrative/screenplay material where multiple interpretations of the same event are INTENTIONAL (mark TENSION or COMPLEMENTARY, not CONTRADICTORY)
+- Narrative material where multiple interpretations of the same event are INTENTIONAL (mark TENSION or COMPLEMENTARY, not CONTRADICTORY)
 - One claim adds detail to another without conflicting (mark COMPLEMENTARY)
 - Strategic perspectives that represent different framings of the same reality (mark TENSION)
 - Claims about the same entity from different time periods (mark TENSION unless clearly superseded)

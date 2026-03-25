@@ -1440,22 +1440,17 @@ _How could this be dramatized? What's the visual?_
 ## Connections to Other Notes
 """,
             },
-            'hunt-skill': {
-                'tags': ['skills', 'style'],
+            'skill': {
+                'tags': ['skills'],
                 'body': f"""# {title}
 
-## What It Searches For
+## Purpose
 
-## Search Strategy
+## How It Works
 
-## Filters & Criteria
-
-## Scoring & Ranking
+## Key Concepts
 
 ## Related
-- [[Hunt Skills]]
-- [[Hunt Common Methodology]]
-- [[Wardrober]]
 """,
             },
             'project': {
@@ -1471,20 +1466,6 @@ _How could this be dramatized? What's the visual?_
 ## Current Status
 
 ## Next Steps
-""",
-            },
-            'quant-skill': {
-                'tags': ['quant-skills'],
-                'body': f"""# {title}
-
-## Purpose
-
-## How It Works
-
-## Key Concepts
-
-## Related
-- [[Training Resources]]
 """,
             },
             'feedback': {
@@ -1527,11 +1508,10 @@ created: {today}
         """Return available note template types."""
         return [
             {'id': 'blank', 'label': 'Blank Note', 'description': 'Empty note with title'},
-            {'id': 'anecdote', 'label': 'Anecdote', 'description': 'Story or memoir template'},
+            {'id': 'anecdote', 'label': 'Anecdote', 'description': 'Story or personal narrative'},
             {'id': 'research', 'label': 'Research Note', 'description': 'Key findings + sources'},
-            {'id': 'hunt-skill', 'label': 'Hunt Skill', 'description': 'eBay search skill template'},
+            {'id': 'skill', 'label': 'Skill', 'description': 'Reusable skill or workflow'},
             {'id': 'project', 'label': 'Project', 'description': 'Project overview + status'},
-            {'id': 'quant-skill', 'label': 'Quant Skill', 'description': 'RM training skill'},
             {'id': 'feedback', 'label': 'Feedback', 'description': 'Guidance or correction'},
             {'id': 'daily', 'label': 'Daily Note', 'description': 'Today\'s capture log + journal'},
         ]

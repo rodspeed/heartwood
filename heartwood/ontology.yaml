@@ -15,7 +15,7 @@ types:
       min: 3
 
   anecdote:
-    description: A specific story or event, often used for memoir or screenplay material
+    description: A specific story or event, often used for personal narrative or creative writing
     icon: "A"
     color: "#ff6b6b"
     shape: tetrahedron
@@ -49,7 +49,7 @@ types:
       min: 1
 
   skill:
-    description: A reusable Claude Code skill or hunt
+    description: A reusable Claude Code skill or automation
     icon: "S"
     color: "#96ceb4"
     shape: cone
@@ -107,7 +107,7 @@ types:
       min: 1
 
   script:
-    description: Screenplay-related structural note
+    description: Creative writing structural note
     icon: "X"
     color: "#e74c3c"
     shape: dodecahedron

@@ -436,17 +436,17 @@ importance: 7
 # Reasoning Reflection — 2026-03-25
 
 ## Key Findings
-- The quant cluster and parenting cluster share a bridge through [[Metacognition]]
+- The research cluster and ideas cluster share a bridge through [[Metacognition]]
   that wasn't visible until run 45 added the concept node.
 - [[Project X Status]] contradicts [[Q1 Planning]] on timeline — first detected run 43,
   still unresolved.
 
 ## What Changed Since Last Run
 - 3 new notes in the creativity cluster shifted its centroid toward [[Identity]].
-- A memoir cluster absorbed two previously-orphaned anecdotes.
+- A narrative cluster absorbed two previously-orphaned anecdotes.
 
 ## Blind Spots
-- No notes on risk management despite 4 quant-related projects.
+- No notes on risk management despite 4 related projects.
 - The feedback cluster hasn't grown in 3 weeks.
 ```
 
@@ -857,7 +857,7 @@ def heartwood_beliefs(topic: str) -> list[dict]:
 - **Layer 3 (LLM):** Haiku classifies as CONTRADICTORY/TENSION/COMPLEMENTARY/UNRELATED. 33 confirmed from 164 total candidates (20% confirmation rate).
 - **Revision:** 33 revisions applied. Entrenchment-based with LLM resolution hints. Close-entrenchment pairs marked "contested" rather than auto-resolved.
 - **Pipeline integration:** reason.py runs belief revision after claim extraction in both CLI and hosted paths.
-- **Key findings:** Role inconsistency, location detail conflicts, temporal contradictions. Some over-confirmation of narrative tensions in memoir/screenplay notes — acceptable since these are flagged for human review.
+- **Key findings:** Role inconsistency, location detail conflicts, temporal contradictions. Some over-confirmation of narrative tensions in long-form notes — acceptable since these are flagged for human review.
 - **Storage:** `.graph/revisions.json` — contradictions + revision log.
 
 ---
@@ -973,14 +973,14 @@ def heartwood_neighbors(note_id: str, hops: int = 2) -> list[dict]:
 1. **Two-hop path rules** — A -r1-> B, B -r2-> C => A -r3-> C. Limited by relation diversity (98.5% of edges are `related_to`).
 2. **Shared-neighbor rules** — A -> C, B -> C => A related_to B.
 3. **Type-affinity rules** — type pairs that tend to be connected (e.g., script+script at 100%).
-4. **Tag co-occurrence rules** — shared tags predict links (e.g., `[denim]` conf=0.60, `[family]` conf=1.0).
+4. **Tag co-occurrence rules** — shared tags predict links (e.g., `[cooking]` conf=0.60, `[family]` conf=1.0).
 
 **Results on 171-node, 983-edge graph:**
 - 1,465 triples extracted (edges + type/tag triples)
 - 10 rules mined (5 with confidence >= 0.5, 3 at 1.0)
 - 200 candidates after PPR pre-filtering (well under 2,000 cap)
 - 20 predictions after top-k selection (LLM reranking adds relation types)
-- Top predictions: hunt skill connections, memoir anecdote links, reasoning engine notes
+- Top predictions: cross-cluster concept links, anecdote-to-theme connections, methodology notes
 
 **Scoring formula:** `score = 0.35 * semantic + 0.30 * structural + 0.35 * rule`
 Semantic uses MiniLM-L6-v2 embeddings. Structural uses PPR scores normalized to [0,1]. Rule uses best matching rule confidence.
