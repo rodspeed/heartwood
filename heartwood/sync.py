@@ -14,7 +14,6 @@ Native locations scanned:
     - .claude/agents/*.md                -> agents
     - .claude/rules/*.md                 -> rules
     - Memory files (auto-memory)         -> memories
-    - Desktop/Quant Learner/skills/*.md  -> quant skills
 """
 
 import os
@@ -28,8 +27,7 @@ from pathlib import Path
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 NOTES_DIR = os.path.join(SCRIPT_DIR, 'notes')
 TRASH_DIR = os.path.join(SCRIPT_DIR, 'trash')
-CLAUDE_CODE = os.path.dirname(SCRIPT_DIR)  # Desktop/Claude Code
-QUANT_LEARNER = os.path.join(os.path.dirname(CLAUDE_CODE), 'Quant Learner')
+PARENT_DIR = os.path.dirname(SCRIPT_DIR)
 MEMORY_DIR = os.environ.get('HEARTWOOD_MEMORY_DIR', '') or os.path.join(
     os.path.expanduser('~'), '.heartwood', 'memory'
 )
@@ -71,7 +69,7 @@ def discover_sources():
     sources = []
 
     # 1. Skills (.claude/skills/*/SKILL.md)
-    skills_dir = os.path.join(CLAUDE_CODE, '.claude', 'skills')
+    skills_dir = os.path.join(PARENT_DIR, '.claude', 'skills')
     if os.path.exists(skills_dir):
         for name in os.listdir(skills_dir):
             skill_file = os.path.join(skills_dir, name, 'SKILL.md')
@@ -91,7 +89,7 @@ def discover_sources():
                 })
 
     # 2. Agents (.claude/agents/*.md)
-    agents_dir = os.path.join(CLAUDE_CODE, '.claude', 'agents')
+    agents_dir = os.path.join(PARENT_DIR, '.claude', 'agents')
     if os.path.exists(agents_dir):
         for f in os.listdir(agents_dir):
             if f.endswith('.md'):
@@ -111,25 +109,23 @@ def discover_sources():
                     'native_name': Path(f).stem,
                 })
 
-    # 4. Quant Learner skills
-    ql_skills = os.path.join(QUANT_LEARNER, 'skills')
-    if os.path.exists(ql_skills):
-        for f in os.listdir(ql_skills):
-            if f.endswith('.md'):
-                sources.append({
-                    'path': os.path.join(ql_skills, f),
-                    'category': 'quant-skill',
-                    'native_name': Path(f).stem,
-                })
-
-    # 5. Quant Learner rm-trainer
-    rm_trainer = os.path.join(QUANT_LEARNER, 'rm-trainer', 'SKILL.md')
-    if os.path.isfile(rm_trainer):
-        sources.append({
-            'path': rm_trainer,
-            'category': 'quant-skill',
-            'native_name': 'rm-trainer',
-        })
+    # Additional source directories can be configured via HEARTWOOD_SYNC_DIRS env var
+    # (comma-separated list of dir:category pairs, e.g. "/path/to/skills:skill")
+    extra = os.environ.get('HEARTWOOD_SYNC_DIRS', '')
+    if extra:
+        for entry in extra.split(','):
+            entry = entry.strip()
+            if ':' not in entry:
+                continue
+            dir_path, cat = entry.rsplit(':', 1)
+            if os.path.exists(dir_path):
+                for f in os.listdir(dir_path):
+                    if f.endswith('.md'):
+                        sources.append({
+                            'path': os.path.join(dir_path, f),
+                            'category': cat.strip(),
+                            'native_name': Path(f).stem,
+                        })
 
     return sources
 
@@ -198,23 +194,8 @@ def create_note_from_source(source):
     elif cat == 'agent' and 'agent' not in tags:
         tags.append('agent')
     elif cat == 'memory':
-        # Assign project-specific tags instead of generic 'memory'
-        if 'lidia' in native_name:
-            if 'lidia' not in tags:
-                tags.append('lidia')
-            if 'anecdote' in native_name:
-                if 'anecdote' not in tags:
-                    tags.append('anecdote')
-            elif 'script' in native_name or 'dramatic' in native_name or 'visual' in native_name:
-                if 'script' not in tags:
-                    tags.append('script')
-            elif 'research' in native_name or 'reference' in native_name:
-                if 'research' not in tags:
-                    tags.append('research')
-            else:
-                if 'project' not in tags:
-                    tags.append('project')
-        elif 'user' in native_name or 'heritage' in native_name or 'role' in native_name:
+        # Assign tags based on naming conventions
+        if 'user' in native_name or 'heritage' in native_name or 'role' in native_name:
             if 'user' not in tags:
                 tags.append('user')
         elif 'feedback' in native_name:
@@ -243,7 +224,7 @@ def create_note_from_source(source):
             tags.append('skills')
 
     # Add source reference
-    rel_path = os.path.relpath(source['path'], CLAUDE_CODE).replace('\\', '/')
+    rel_path = os.path.relpath(source['path'], PARENT_DIR).replace('\\', '/')
     source_line = f"\n\n---\n*Native source: `{rel_path}`*\n"
 
     # Build the note
@@ -594,10 +575,10 @@ def run_sync(apply=False):
 
 
 CATEGORY_RESTORE_DIRS = {
-    'skill': os.path.join(CLAUDE_CODE, '.claude', 'skills'),
-    'agent': os.path.join(CLAUDE_CODE, '.claude', 'agents'),
+    'skill': os.path.join(PARENT_DIR, '.claude', 'skills'),
+    'agent': os.path.join(PARENT_DIR, '.claude', 'agents'),
     'memory': MEMORY_DIR,
-    'quant-skill': os.path.join(QUANT_LEARNER, 'skills'),
+    # Additional restore dirs can be added via HEARTWOOD_SYNC_DIRS
 }
 
 

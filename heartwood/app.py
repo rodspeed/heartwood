@@ -4067,12 +4067,11 @@ class FileWatcher:
         dirs = [self.api._notes_path]
         # Also watch source directories that sync.py scans
         try:
-            from sync import CLAUDE_CODE, QUANT_LEARNER, MEMORY_DIR
+            from sync import PARENT_DIR, MEMORY_DIR
             candidates = [
-                os.path.join(CLAUDE_CODE, '.claude', 'skills'),
-                os.path.join(CLAUDE_CODE, '.claude', 'agents'),
+                os.path.join(PARENT_DIR, '.claude', 'skills'),
+                os.path.join(PARENT_DIR, '.claude', 'agents'),
                 MEMORY_DIR,
-                os.path.join(QUANT_LEARNER, 'skills'),
             ]
             for d in candidates:
                 if os.path.isdir(d):

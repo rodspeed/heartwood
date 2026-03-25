@@ -16,6 +16,9 @@ heartwood/.graph/*.json
 
 # Reports (generated)
 heartwood/reports/*.md
+
+# Backups (contain user data)
+heartwood/backups/
 !heartwood/reports/.gitkeep
 
 # Environment

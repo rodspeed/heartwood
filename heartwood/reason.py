@@ -1944,7 +1944,7 @@ def _build_narration_prompt(latent, gaps, clusters, bridges, contradictions, dri
 
     data = '\n\n'.join(sections)
 
-    return f"""You are narrating the results of a reasoning engine that analyzes a personal knowledge graph (118 notes about projects, identity, family, career, creativity, and style).
+    return f"""You are narrating the results of a reasoning engine that analyzes a personal knowledge graph.
 
 Write a 150-250 word narrative summary addressed directly to the graph's owner. Be specific — name actual notes and connections. Lead with the most interesting finding. Skip anything empty or boring. Write like a sharp colleague briefing someone, not a report generator.
 
@@ -2260,7 +2260,7 @@ def main():
     # Print narration to terminal
     if narration:
         print('\n' + '=' * 60)
-        print('  CEREBRO — What your knowledge graph is telling you')
+        print('  HEARTWOOD — What your knowledge graph is telling you')
         print('=' * 60 + '\n')
         print(narration)
         print('\n' + '=' * 60 + '\n')

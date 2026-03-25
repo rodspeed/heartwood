@@ -354,9 +354,9 @@ The `heartwood_context` tool is the most valuable new capability. It returns a s
   "connections": [
     {"from": "vol-surface", "to": "quant-learner", "type": "supports"}
   ],
-  "active_projects": ["Quant Learner", "Arbitrage Engine"],
-  "community": "Quantitative Work (7 notes)",
-  "graph_position": "Central to quant cluster, bridges to identity cluster via Metacognition"
+  "active_projects": ["Side Project Alpha", "Research Pipeline"],
+  "community": "Technical Work (7 notes)",
+  "graph_position": "Central to technical cluster, bridges to identity cluster via Metacognition"
 }
 ```
 
