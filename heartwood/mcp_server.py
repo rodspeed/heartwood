@@ -10,10 +10,10 @@ Exposes the Heartwood knowledge graph as an MCP server with 7 tools:
   heartwood_predictions — query predicted missing links with multi-signal scores
 
 Run:
-    python cerebro/mcp_server.py
+    python heartwood/mcp_server.py
 
 Or configure in Claude Code's MCP settings:
-    "cerebro": {"command": "python", "args": ["cerebro/mcp_server.py"]}
+    "heartwood": {"command": "python", "args": ["heartwood/mcp_server.py"]}
 """
 
 import os
@@ -22,7 +22,7 @@ import json
 import datetime
 import uuid
 
-# Ensure cerebro/ is on the path so imports resolve
+# Ensure heartwood/ is on the path so imports resolve
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from mcp.server.fastmcp import FastMCP
@@ -488,7 +488,7 @@ def heartwood_beliefs(query: str = "", note_id: str = "", min_confidence: float 
 
     store = load_store()
     if not store.notes:
-        return {'error': 'No claims extracted yet. Run: python cerebro/beliefs.py --all'}
+        return {'error': 'No claims extracted yet. Run: python heartwood/beliefs.py --all'}
 
     # Collect candidate claims
     candidates = []
@@ -572,7 +572,7 @@ def heartwood_predictions(note_id: str = "", top_k: int = 10) -> dict:
 
     store = load_pred_store()
     if not store.predictions:
-        return {'error': 'No predictions yet. Run: python cerebro/link_prediction.py'}
+        return {'error': 'No predictions yet. Run: python heartwood/link_prediction.py'}
 
     predictions = store.predictions
     if note_id:

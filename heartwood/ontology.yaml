@@ -15,7 +15,7 @@ types:
       min: 3
 
   anecdote:
-    description: A specific story or event, usually for the Lidia screenplay
+    description: A specific story or event, often used for memoir or screenplay material
     icon: "A"
     color: "#ff6b6b"
     shape: tetrahedron

@@ -8,13 +8,13 @@ Three-layer contradiction detection with formal belief revision:
 Plus AGM-style entrenchment ordering and justification tracking.
 
 Usage:
-    python cerebro/revision.py                  # detect contradictions across all claims
-    python cerebro/revision.py --note X         # check claims from note X against all others
-    python cerebro/revision.py --stats          # show revision stats
-    python cerebro/revision.py --dry-run        # layers 1-2 only, no LLM cost
-    python cerebro/revision.py --reverse         # preview reversal of pre-fix revisions
-    python cerebro/revision.py --reverse --apply # execute reversal
-    python cerebro/revision.py --reverse 2026-03-25T15:00  # custom cutoff
+    python heartwood/revision.py                  # detect contradictions across all claims
+    python heartwood/revision.py --note X         # check claims from note X against all others
+    python heartwood/revision.py --stats          # show revision stats
+    python heartwood/revision.py --dry-run        # layers 1-2 only, no LLM cost
+    python heartwood/revision.py --reverse         # preview reversal of pre-fix revisions
+    python heartwood/revision.py --reverse --apply # execute reversal
+    python heartwood/revision.py --reverse 2026-03-25T15:00  # custom cutoff
 """
 
 import os
@@ -205,7 +205,7 @@ def _temporal_overlap(a: Claim, b: Claim) -> bool:
 def _extract_entities(text: str) -> set[str]:
     """Extract potential entity mentions from claim text (capitalized phrases, quoted terms)."""
     entities = set()
-    # Capitalized multi-word phrases (e.g., "Two Sigma", "Dobbs Ferry")
+    # Capitalized multi-word phrases (e.g., "Acme Corp", "New York")
     for match in re.finditer(r'[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+', text):
         entities.add(match.group().lower())
     # Single capitalized words that aren't sentence starters (heuristic)
@@ -392,7 +392,7 @@ Classify each pair:
 
 (a) CONTRADICTORY — the claims directly conflict and cannot both be true as stated. One must be wrong or outdated. Example: "X is a manager" vs "X is an associate" (different roles).
 (b) TENSION — the claims pull in different directions but COULD both be true with context. Do NOT confirm these as contradictions. Example: "She accepted the situation" vs "She was unhappy about it" (both can be true simultaneously).
-(c) COMPLEMENTARY — different details or perspectives on the same topic. No conflict. Example: "X grew up in Accra" vs "X grew up in Navrongo and Accra" (one is more complete). Also applies when one claim is a more detailed version of the other, or when claims describe different events/aspects of the same subject.
+(c) COMPLEMENTARY — different details or perspectives on the same topic. No conflict. Example: "X studied at State University" vs "X studied at State University and later at City College" (one is more complete). Also applies when one claim is a more detailed version of the other, or when claims describe different events/aspects of the same subject.
 (d) UNRELATED — false positive, claims are not about the same thing.
 
 Common false positives to watch for:
@@ -674,7 +674,8 @@ def run_belief_revision(graph: dict, api_key: str = '', call_llm=None,
     adjacency = graph.get('adjacency', {})
     emb_cache = graph.get('emb_cache')
     if not emb_cache:
-        emb_cache = EmbeddingCache()
+        default_cache = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.graph', 'embeddings.json')
+        emb_cache = EmbeddingCache(default_cache)
 
     return detect_contradictions(
         beliefs, adjacency, emb_cache,
@@ -860,7 +861,7 @@ def main():
     api_key = get_api_key()
     beliefs = load_store()
     if not beliefs.notes:
-        print('No claims extracted. Run: python cerebro/beliefs.py --all')
+        print('No claims extracted. Run: python heartwood/beliefs.py --all')
         return
 
     from reason import load_graph

@@ -7,11 +7,11 @@ Claims are cached by note mtime in .graph/beliefs.json. Re-extracted only
 when the source note is modified.
 
 Usage:
-    python cerebro/beliefs.py                        # extract from all notes
-    python cerebro/beliefs.py --pilot                # 20-note pilot run
-    python cerebro/beliefs.py --pilot --model sonnet # pilot with Sonnet
-    python cerebro/beliefs.py --note firm-intel      # single note
-    python cerebro/beliefs.py --stats                # show extraction stats
+    python heartwood/beliefs.py                        # extract from all notes
+    python heartwood/beliefs.py --pilot                # 20-note pilot run
+    python heartwood/beliefs.py --pilot --model sonnet # pilot with Sonnet
+    python heartwood/beliefs.py --note firm-intel      # single note
+    python heartwood/beliefs.py --stats                # show extraction stats
 """
 
 import os
@@ -364,26 +364,26 @@ def extract_all(note_ids: Optional[list[str]] = None, model: str = 'claude-haiku
 # ── Pilot ────────────────────────────────────────────────────────────────
 
 PILOT_NOTES = [
-    'feedback-aesthetic-direction',
-    'user-discernment-fear',
-    'lidia-goals-and-credits',
-    'lidia-research-koryo-saram-soviet-life',
-    'user-poetry-as-release',
-    'firm-intel',
-    'kg-design-resources',
-    'ontology-as-abstraction-layer',
-    'reasoning-reflection-2026-03-25',
-    'scrutinize-skill',
-    'visual-contrast-moscow-vs-navrongo',
-    'lidia-anecdote-catholicism',
-    'ruthie',
-    'tee-hunt',
-    'hunt-common',
-    'building-to-learn',
-    'ai-native-rm',
-    'cerebro-batch-upload',
-    'feedback-giftedness-collaboration',
-    'dobbs-ferry-preference',
+    'meeting-notes-jan',
+    'project-roadmap',
+    'book-review-example',
+    'weekly-reflection-example',
+    'travel-journal-sample',
+    'recipe-collection',
+    'career-planning-note',
+    'research-machine-learning',
+    'product-comparison',
+    'feedback-collaboration-style',
+    'design-philosophy',
+    'reading-list-2026',
+    'team-retrospective',
+    'architecture-decisions',
+    'interview-prep-notes',
+    'conference-takeaways',
+    'side-project-ideas',
+    'workflow-automation',
+    'debugging-patterns',
+    'api-integration-notes',
 ]
 
 

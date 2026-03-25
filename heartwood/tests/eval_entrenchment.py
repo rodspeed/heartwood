@@ -4,9 +4,9 @@ Reads human-annotated ground truth from eval_ground_truth.json and compares
 against the entrenchment ordering. Outputs agreement score and per-case analysis.
 
 Usage:
-    python cerebro/tests/eval_entrenchment.py --generate   # generate review sheet
-    python cerebro/tests/eval_entrenchment.py --evaluate   # run evaluation
-    python cerebro/tests/eval_entrenchment.py --tune       # grid search weights
+    python heartwood/tests/eval_entrenchment.py --generate   # generate review sheet
+    python heartwood/tests/eval_entrenchment.py --evaluate   # run evaluation
+    python heartwood/tests/eval_entrenchment.py --tune       # grid search weights
 """
 
 import os

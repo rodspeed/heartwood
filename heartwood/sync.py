@@ -3,11 +3,11 @@ Sync native markdown files <-> Heartwood notes (bidirectional).
 
 Forward sync: native files -> Heartwood notes (create/update).
 Reverse sync: when a Heartwood note is deleted, the native file is moved to
-cerebro/trash/ and held for 30 days before permanent deletion.
+heartwood/trash/ and held for 30 days before permanent deletion.
 
 Usage:
-    python cerebro/sync.py          # dry run (shows what would change)
-    python cerebro/sync.py --apply  # actually write changes
+    python heartwood/sync.py          # dry run (shows what would change)
+    python heartwood/sync.py --apply  # actually write changes
 
 Native locations scanned:
     - .claude/skills/*/SKILL.md          -> skills
@@ -30,8 +30,8 @@ NOTES_DIR = os.path.join(SCRIPT_DIR, 'notes')
 TRASH_DIR = os.path.join(SCRIPT_DIR, 'trash')
 CLAUDE_CODE = os.path.dirname(SCRIPT_DIR)  # Desktop/Claude Code
 QUANT_LEARNER = os.path.join(os.path.dirname(CLAUDE_CODE), 'Quant Learner')
-MEMORY_DIR = os.path.expanduser(
-    r'~\.claude\projects\c--Users-19735-Desktop-Claude-Code\memory'
+MEMORY_DIR = os.environ.get('HEARTWOOD_MEMORY_DIR', '') or os.path.join(
+    os.path.expanduser('~'), '.heartwood', 'memory'
 )
 MEMORY_INDEX = os.path.join(MEMORY_DIR, 'MEMORY.md')
 TRASH_RETENTION_DAYS = 365
@@ -287,7 +287,7 @@ def check_reverse_sync(sources, existing_notes):
 
 
 def trash_native_file(source, apply=False):
-    """Move a native file to cerebro/trash/ with a timestamp prefix."""
+    """Move a native file to heartwood/trash/ with a timestamp prefix."""
     src_path = source['path']
     if not os.path.isfile(src_path):
         return None
@@ -683,18 +683,18 @@ def restore_from_trash(search_term):
     print(f"Restored: {original} -> {restore_path}")
 
     # Also re-create the Heartwood note via forward sync
-    print(f"\nRun 'python cerebro/sync.py --apply' to re-create the Heartwood note.")
+    print(f"\nRun 'python heartwood/sync.py --apply' to re-create the Heartwood note.")
 
 
 def print_help():
     print("""Heartwood Sync -- bidirectional sync between native files and Heartwood notes.
 
 Commands:
-  python cerebro/sync.py              Dry run (show what would change)
-  python cerebro/sync.py --apply      Apply changes (create/update/trash)
-  python cerebro/sync.py --trash      List files in the trash
-  python cerebro/sync.py --restore X  Restore a trashed file (fuzzy match on name)
-  python cerebro/sync.py --help       Show this help
+  python heartwood/sync.py              Dry run (show what would change)
+  python heartwood/sync.py --apply      Apply changes (create/update/trash)
+  python heartwood/sync.py --trash      List files in the trash
+  python heartwood/sync.py --restore X  Restore a trashed file (fuzzy match on name)
+  python heartwood/sync.py --help       Show this help
 """)
 
 
@@ -708,7 +708,7 @@ if __name__ == '__main__':
         if idx + 1 < len(sys.argv):
             restore_from_trash(sys.argv[idx + 1])
         else:
-            print("Usage: python cerebro/sync.py --restore <search_term>")
+            print("Usage: python heartwood/sync.py --restore <search_term>")
     else:
         apply = '--apply' in sys.argv
         run_sync(apply=apply)

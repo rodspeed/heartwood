@@ -7661,9 +7661,9 @@
             // How strongly to attract to brain surface vs. origin (ramps up with node count)
             const brainBlend = Math.min(1.0, Math.max(0, (n - 8) / 40)); // 0 at ≤8 nodes, 1.0 at 48+
 
-            // Pineal node: Rodspeed by name, fallback to most-connected
-            let pinealNodeId = ids.includes('rodspeed') ? 'rodspeed' : ids[0];
-            if (pinealNodeId !== 'rodspeed') {
+            // Pineal node: most-connected node becomes the center
+            let pinealNodeId = ids[0];
+            {
                 let maxEdges = 0;
                 for (const id of ids) {
                     const ec = nodeObjects[id].edgeCount || 0;
@@ -11008,7 +11008,7 @@
         async function ensureApiKey() {
             const result = await api('get_config', 'anthropic_api_key');
             if (result.value) return true;
-            const key = prompt('Enter your Anthropic API key for smart summarization.\nThis is stored locally in cerebro/.graph/config.json');
+            const key = prompt('Enter your Anthropic API key for smart summarization.\nThis is stored locally in heartwood/.graph/config.json');
             if (!key) return false;
             await api('set_config', 'anthropic_api_key', key);
             return true;
@@ -11484,7 +11484,7 @@
             if (!grid) return;
             const templates = [
                 { id: 'blank', label: 'Blank', desc: 'Empty note' },
-                { id: 'anecdote', label: 'Anecdote', desc: 'Lidia story' },
+                { id: 'anecdote', label: 'Anecdote', desc: 'Personal story' },
                 { id: 'research', label: 'Research', desc: 'Findings + sources' },
                 { id: 'hunt-skill', label: 'Hunt Skill', desc: 'eBay search skill' },
                 { id: 'project', label: 'Project', desc: 'Overview + status' },

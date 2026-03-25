@@ -1411,7 +1411,7 @@ Focus on what THIS USER specifically knows, believes, has decided, or is uncerta
                 'body': f'# {title}\n\n',
             },
             'anecdote': {
-                'tags': ['lidia'],
+                'tags': ['anecdote'],
                 'body': f"""# {title}
 
 ## Context
@@ -1484,7 +1484,7 @@ _How could this be dramatized? What's the visual?_
 ## Key Concepts
 
 ## Related
-- [[Quant Learner]]
+- [[Training Resources]]
 """,
             },
             'feedback': {
@@ -1527,7 +1527,7 @@ created: {today}
         """Return available note template types."""
         return [
             {'id': 'blank', 'label': 'Blank Note', 'description': 'Empty note with title'},
-            {'id': 'anecdote', 'label': 'Lidia Anecdote', 'description': 'Story template for the screenplay'},
+            {'id': 'anecdote', 'label': 'Anecdote', 'description': 'Story or memoir template'},
             {'id': 'research', 'label': 'Research Note', 'description': 'Key findings + sources'},
             {'id': 'hunt-skill', 'label': 'Hunt Skill', 'description': 'eBay search skill template'},
             {'id': 'project', 'label': 'Project', 'description': 'Project overview + status'},
@@ -3370,9 +3370,13 @@ Respond with ONLY the bullet points (markdown list), no preamble."""
         Filesystem mode: fetches from the Telegram bot HTTP API (legacy).
         Uses Claude Haiku to route captures: create new notes or append to existing ones.
         """
-        from storage_supabase import SupabaseBackend
+        try:
+            from storage_supabase import SupabaseBackend
+            _has_supabase = True
+        except ImportError:
+            _has_supabase = False
 
-        if isinstance(self._storage, SupabaseBackend):
+        if _has_supabase and isinstance(self._storage, SupabaseBackend):
             # ── Supabase: read from captures table directly ──
             resp = (self._storage._client.table('captures')
                     .select('*')
@@ -3571,7 +3575,7 @@ created: {today}
             created_notes.append(title)
 
         # Mark captures as processed
-        if isinstance(self._storage, SupabaseBackend):
+        if _has_supabase and isinstance(self._storage, SupabaseBackend):
             # Supabase: mark rows as processed
             capture_ids = [c['id'] for c in captures if 'id' in c]
             if capture_ids:
@@ -3968,11 +3972,10 @@ created: {today}
     def _dual_write_clip(self, title, source_url, body, wikilinks, date):
         """Write a clip to Claude Code memory directory as a reference file."""
         try:
-            memory_dir = os.path.normpath(os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), '..',
-                '.claude', 'projects',
-                'c--Users-19735-Desktop-Claude-Code', 'memory'
-            ))
+            memory_dir = os.environ.get('HEARTWOOD_MEMORY_DIR', '') or os.path.join(
+                os.path.expanduser('~'), '.heartwood', 'memory'
+            )
+            memory_dir = os.path.normpath(memory_dir)
             if not os.path.isdir(memory_dir):
                 return
 

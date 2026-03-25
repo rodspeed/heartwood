@@ -9,11 +9,11 @@ Top candidates are reranked by Haiku with relation type prediction
 constrained to the ontology's 7 relation types.
 
 Usage:
-    python cerebro/link_prediction.py                    # predict links (full pipeline)
-    python cerebro/link_prediction.py --dry-run          # structural + embedding only, no LLM
-    python cerebro/link_prediction.py --stats            # show prediction stats
-    python cerebro/link_prediction.py --rules            # show mined rules only
-    python cerebro/link_prediction.py --node firm-intel  # predictions for a specific node
+    python heartwood/link_prediction.py                    # predict links (full pipeline)
+    python heartwood/link_prediction.py --dry-run          # structural + embedding only, no LLM
+    python heartwood/link_prediction.py --stats            # show prediction stats
+    python heartwood/link_prediction.py --rules            # show mined rules only
+    python heartwood/link_prediction.py --node firm-intel  # predictions for a specific node
 """
 
 import os
@@ -602,7 +602,8 @@ def run_link_prediction(graph: dict, ga, api_key: str = '',
     # Step 3: Generate candidates
     emb_cache = graph.get('emb_cache')
     if not emb_cache:
-        emb_cache = EmbeddingCache()
+        default_cache = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.graph', 'embeddings.json')
+        emb_cache = EmbeddingCache(default_cache)
 
     candidates = generate_candidates(graph, ga, emb_cache, rules,
                                      node_filter=node_filter)

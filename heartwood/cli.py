@@ -2,16 +2,16 @@
 """Heartwood CLI — quick capture, search, and graph management from the terminal.
 
 Usage:
-    python cerebro/cli.py add "My new thought"
-    python cerebro/cli.py add --title "Idea Title" "Body text goes here"
-    python cerebro/cli.py search "portfolio theory"
-    python cerebro/cli.py link "Note A" "Note B"
-    python cerebro/cli.py recent
-    python cerebro/cli.py read <note-id>
+    python heartwood/cli.py add "My new thought"
+    python heartwood/cli.py add --title "Idea Title" "Body text goes here"
+    python heartwood/cli.py search "portfolio theory"
+    python heartwood/cli.py link "Note A" "Note B"
+    python heartwood/cli.py recent
+    python heartwood/cli.py read <note-id>
 
 Backend: auto-detects from environment variables.
   - If SUPABASE_URL, SUPABASE_KEY, and SUPABASE_ACCESS_TOKEN are set → Supabase
-  - Otherwise → local filesystem (cerebro/notes/)
+  - Otherwise → local filesystem (heartwood/notes/)
 """
 
 import sys
@@ -28,12 +28,12 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(_cerebro_dir, '.env'))
 
 # Config file location
-_CONFIG_DIR = os.path.join(os.path.expanduser('~'), '.cerebro')
+_CONFIG_DIR = os.path.join(os.path.expanduser('~'), '.heartwood')
 _CONFIG_FILE = os.path.join(_CONFIG_DIR, 'config.json')
 
 
 def _load_config():
-    """Load CLI config from ~/.cerebro/config.json."""
+    """Load CLI config from ~/.heartwood/config.json."""
     if os.path.exists(_CONFIG_FILE):
         import json
         with open(_CONFIG_FILE, 'r') as f:
@@ -42,7 +42,7 @@ def _load_config():
 
 
 def _save_config(cfg):
-    """Save CLI config to ~/.cerebro/config.json."""
+    """Save CLI config to ~/.heartwood/config.json."""
     import json
     os.makedirs(_CONFIG_DIR, exist_ok=True)
     with open(_CONFIG_FILE, 'w') as f:
@@ -52,7 +52,7 @@ def _save_config(cfg):
 def _make_api():
     """Create an Api instance with the appropriate backend.
 
-    Priority: env vars > ~/.cerebro/config.json > local filesystem.
+    Priority: env vars > ~/.heartwood/config.json > local filesystem.
     """
     cfg = _load_config()
     url = os.environ.get('SUPABASE_URL', '') or cfg.get('supabase_url', '')
@@ -60,8 +60,13 @@ def _make_api():
     token = os.environ.get('SUPABASE_ACCESS_TOKEN', '') or cfg.get('token', '')
 
     if url and key and token:
-        from storage_supabase import SupabaseBackend
-        import jwt as pyjwt
+        try:
+            from storage_supabase import SupabaseBackend
+            import jwt as pyjwt
+        except ImportError:
+            print("Warning: Supabase credentials found but storage_supabase not available. Falling back to filesystem.", flush=True)
+            from app import Api
+            return Api()
         payload = pyjwt.decode(token, options={"verify_signature": False})
         user_id = payload.get('sub', '')
         backend = SupabaseBackend(url, key, token, user_id)

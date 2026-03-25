@@ -47,7 +47,7 @@ class CanvasData:
 class StorageBackend(abc.ABC):
     """Abstract interface for note storage.
 
-    Both FileSystemBackend and SupabaseBackend implement this.
+    FileSystemBackend implements this interface.
     Every method that writes returns a result dict for API compatibility.
     """
 

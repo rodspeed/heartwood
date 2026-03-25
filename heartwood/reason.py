@@ -5,13 +5,13 @@ an intelligence report: latent connections, knowledge gaps, cluster narratives,
 inter-cluster bridges, contradictions, drift alerts, and synthesis opportunities.
 
 Usage:
-    python cerebro/reason.py                    # full report (all 6 passes)
-    python cerebro/reason.py --pass drift       # single pass
-    python cerebro/reason.py --quiet            # structural passes only (no Haiku calls)
-    python cerebro/reason.py --apply            # run report + write back links into notes
-    python cerebro/reason.py --curate           # review captures (dry run)
-    python cerebro/reason.py --curate --apply   # review + apply curation decisions
-    python cerebro/reason.py --backup           # zip notes/ + .graph/ to backups/
+    python heartwood/reason.py                    # full report (all 6 passes)
+    python heartwood/reason.py --pass drift       # single pass
+    python heartwood/reason.py --quiet            # structural passes only (no Haiku calls)
+    python heartwood/reason.py --apply            # run report + write back links into notes
+    python heartwood/reason.py --curate           # review captures (dry run)
+    python heartwood/reason.py --curate --apply   # review + apply curation decisions
+    python heartwood/reason.py --backup           # zip notes/ + .graph/ to backups/
 """
 
 import os
@@ -1837,7 +1837,7 @@ def apply_curation(graph, curation_results):
 # ── Backup ─────────────────────────────────────────────────────────────
 
 def backup_cerebro():
-    """Create a timestamped zip of cerebro/notes/ and cerebro/.graph/."""
+    """Create a timestamped zip of heartwood/notes/ and heartwood/.graph/."""
     import zipfile
 
     cerebro_dir = os.path.dirname(os.path.abspath(__file__))
@@ -2244,7 +2244,7 @@ def main():
     if narration:
         report += '\n## Briefing\n\n' + narration + '\n'
 
-    # Write to cerebro/reports/ only (not notes/ — report is an artifact, not a knowledge node)
+    # Write to heartwood/reports/ only (not notes/ — report is an artifact, not a knowledge node)
     reports_dir = _reports_path()
     os.makedirs(reports_dir, exist_ok=True)
     today = datetime.date.today().isoformat()

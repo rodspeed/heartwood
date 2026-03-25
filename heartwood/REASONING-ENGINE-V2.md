@@ -113,7 +113,7 @@ Before building anything, freeze a benchmark that persists across all phases.
 
 ### 4.1 Benchmark Snapshot
 
-Export the current graph as a frozen JSON file: all notes (id, title, type, tags, body, created), all edges, all embeddings. Store as `cerebro/.graph/benchmark-2026-03-25.json`.
+Export the current graph as a frozen JSON file: all notes (id, title, type, tags, body, created), all edges, all embeddings. Store as `heartwood/.graph/benchmark-2026-03-25.json`.
 
 ### 4.2 Scoring Rubric
 
@@ -365,7 +365,7 @@ Implementation: semantic search for relevant notes → PPR from Phase 1 for stru
 ### 6.4 MCP Server Architecture
 
 ```python
-# cerebro/mcp_server.py
+# heartwood/mcp_server.py
 from mcp import Server
 from app import Api
 
@@ -385,7 +385,7 @@ if __name__ == "__main__":
     server.run()
 ```
 
-Run with: `python cerebro/mcp_server.py` or configure in Claude Code's MCP settings.
+Run with: `python heartwood/mcp_server.py` or configure in Claude Code's MCP settings.
 
 ### 6.5 Failure Modes
 
@@ -443,7 +443,7 @@ importance: 7
 
 ## What Changed Since Last Run
 - 3 new notes in the creativity cluster shifted its centroid toward [[Identity]].
-- The [[Lidia]] cluster absorbed two previously-orphaned anecdotes.
+- A memoir cluster absorbed two previously-orphaned anecdotes.
 
 ## Blind Spots
 - No notes on risk management despite 4 quant-related projects.
@@ -706,7 +706,7 @@ If Claude returns invalid JSON or extraction fails for a note, skip that note �
 
 **Status: SHIPPED.** Phase 4a is complete and passing all gate criteria.
 
-- **Module:** `cerebro/beliefs.py` (~330 lines). Claim Pydantic model, BeliefsStore, extraction prompt, JSON repair, CLI.
+- **Module:** `heartwood/beliefs.py` (~330 lines). Claim Pydantic model, BeliefsStore, extraction prompt, JSON repair, CLI.
 - **Model:** Haiku 4.5 (Sonnet comparison blocked — API key is Haiku-only). Haiku quality passes all 5 gates.
 - **Full extraction:** 170/171 notes, 3,118 claims, 18.3 avg/note, 1 timeout failure.
 - **Confidence distribution:** 75% high (0.8-1.0), 22% medium (0.6-0.8), 3% low/uncertain.
@@ -851,13 +851,13 @@ def cerebro_beliefs(topic: str) -> list[dict]:
 
 **Status: SHIPPED.** Phase 4b is complete and integrated.
 
-- **Module:** `cerebro/revision.py` (~500 lines). Justification, ContradictionCandidate, RevisionLog, RevisionStore Pydantic models. 3-layer detection, entrenchment scoring, AGM revision.
+- **Module:** `heartwood/revision.py` (~500 lines). Justification, ContradictionCandidate, RevisionLog, RevisionStore Pydantic models. 3-layer detection, entrenchment scoring, AGM revision.
 - **Layer 1 (structural):** Entity extraction + temporal overlap + negation/suffix detection. 114 candidates from 3,118 claims.
 - **Layer 2 (embedding):** Cosine similarity >0.75 + polarity flip/opposite word detection. 50 candidates.
 - **Layer 3 (LLM):** Haiku classifies as CONTRADICTORY/TENSION/COMPLEMENTARY/UNRELATED. 33 confirmed from 164 total candidates (20% confirmation rate).
 - **Revision:** 33 revisions applied. Entrenchment-based with LLM resolution hints. Close-entrenchment pairs marked "contested" rather than auto-resolved.
 - **Pipeline integration:** reason.py runs belief revision after claim extraction in both CLI and hosted paths.
-- **Key findings:** Role inconsistency (RM vs associate), location details (Navrongo+Accra vs Accra), penicillin timeline contradiction. Some over-confirmation of narrative tensions in Lidia screenplay notes — acceptable since these are flagged for human review.
+- **Key findings:** Role inconsistency, location detail conflicts, temporal contradictions. Some over-confirmation of narrative tensions in memoir/screenplay notes — acceptable since these are flagged for human review.
 - **Storage:** `.graph/revisions.json` — contradictions + revision log.
 
 ---
@@ -980,14 +980,14 @@ def cerebro_neighbors(note_id: str, hops: int = 2) -> list[dict]:
 - 10 rules mined (5 with confidence >= 0.5, 3 at 1.0)
 - 200 candidates after PPR pre-filtering (well under 2,000 cap)
 - 20 predictions after top-k selection (LLM reranking adds relation types)
-- Top predictions: hunt skill connections, Lidia anecdote links, reasoning engine notes
+- Top predictions: hunt skill connections, memoir anecdote links, reasoning engine notes
 
 **Scoring formula:** `score = 0.35 * semantic + 0.30 * structural + 0.35 * rule`
 Semantic uses MiniLM-L6-v2 embeddings. Structural uses PPR scores normalized to [0,1]. Rule uses best matching rule confidence.
 
 **Open question resolved:** 200 notes / 983 edges produce meaningful rules via tag co-occurrence, even though path rules are limited by relation homogeneity. As typed links grow (only 15 `features_character` edges currently), path rules will become more useful.
 
-**Module:** `cerebro/link_prediction.py` (~500 lines). Same pattern as beliefs.py/revision.py. CLI: `--dry-run`, `--stats`, `--rules`, `--node`.
+**Module:** `heartwood/link_prediction.py` (~500 lines). Same pattern as beliefs.py/revision.py. CLI: `--dry-run`, `--stats`, `--rules`, `--node`.
 **MCP tool:** `cerebro_predictions` — 7th tool in mcp_server.py.
 **Pipeline:** Runs after belief revision in both `main()` and `run_reasoning_from_data()`.
 **Storage:** `.graph/link-predictions.json` — predictions, rules, graph stats.
