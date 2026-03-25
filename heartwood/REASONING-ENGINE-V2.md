@@ -1,7 +1,7 @@
 # Reasoning Engine v2: Architecture Document
 
 **Status:** Proposed → Build starts now
-**Author:** Rodspeed + Claude (multi-session review)
+**Author:** Heartwood contributors
 **Date:** 2026-03-25
 **Scope:** Multi-phase upgrade to transform Heartwood's reasoning engine from an LLM prompt wrapper into a research-grounded cognitive system that compounds across runs.
 
@@ -352,7 +352,7 @@ The `heartwood_context` tool is the most valuable new capability. It returns a s
      "relevance": 0.92, "summary": "..."}
   ],
   "connections": [
-    {"from": "vol-surface", "to": "quant-learner", "type": "supports"}
+    {"from": "vol-surface", "to": "learning-path", "type": "supports"}
   ],
   "active_projects": ["Side Project Alpha", "Research Pipeline"],
   "community": "Technical Work (7 notes)",
