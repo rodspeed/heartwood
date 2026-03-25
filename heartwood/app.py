@@ -1423,8 +1423,8 @@ _What happened?_
 ## Emotional Core
 _What does this reveal about the characters?_
 
-## Screenplay Potential
-_How could this be dramatized? What's the visual?_
+## Creative Potential
+_How could this be expanded or reframed?_
 
 ## Related
 """,
@@ -3155,7 +3155,7 @@ Rules:
 - Titles must be 2-4 words, specific, no filler
 - Only APPEND when the capture genuinely extends an existing note's topic
 - LINKS: add [[wikilinks]] to semantically related notes — match by TOPIC, not just keywords. Use the tags and existing links above to find connections a title alone would miss.
-- BACKLINKS: list existing notes that should link BACK to this new/updated note. If you CREATE a note about "Denim Sizing" that links to [[Denim Hunt]], then [[Denim Hunt]] should back-link to it.
+- BACKLINKS: list existing notes that should link BACK to this new/updated note. If you CREATE a note about "API Design" that links to [[Architecture Hub]], then [[Architecture Hub]] should back-link to it.
 - Each capture number must appear in exactly one action
 
 Respond in EXACTLY this format (one action per line, no other text):
