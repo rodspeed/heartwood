@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# User data
+heartwood/notes/
+!heartwood/notes/.gitkeep
+heartwood/.graph/*.json
+!heartwood/.graph/run-counter.json
+
+# Reports (generated)
+heartwood/reports/*.md
+!heartwood/reports/.gitkeep
+
+# Environment
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Packaging
+*.spec
+*.pdf

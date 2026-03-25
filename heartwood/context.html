@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Heartwood — Context Packet</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #020818;
+            --bg-secondary: #06101f;
+            --bg-tertiary: #0a1628;
+            --bg-elevated: #0f1d33;
+            --bg-hover: #142540;
+            --border: #1a2d4a;
+            --border-light: #243a5c;
+            --text-primary: #c8d8ef;
+            --text-secondary: #7a94b8;
+            --text-muted: #4a6080;
+            --accent: #4dc8ff;
+            --accent-dim: rgba(77, 200, 255, 0.1);
+            --accent-glow: rgba(77, 200, 255, 0.3);
+            --font-body: 'Inter', -apple-system, sans-serif;
+            --font-heading: 'Space Grotesk', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --radius: 8px;
+            --radius-lg: 12px;
+            --transition: 150ms ease;
+        }
+
+        html, body {
+            height: 100%;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 15px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 24px 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo {
+            font-family: var(--font-heading);
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        .tagline {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* ── Input state ── */
+        .input-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .query-label {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .query-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 16px;
+            outline: none;
+            transition: border-color var(--transition);
+            /* prevent iOS zoom */
+            -webkit-text-size-adjust: 100%;
+        }
+
+        .query-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .query-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .depth-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .depth-btn {
+            flex: 1;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .depth-btn:active {
+            transform: scale(0.98);
+        }
+
+        .depth-btn.primary {
+            background: var(--accent);
+            color: var(--bg-primary);
+            border-color: var(--accent);
+        }
+
+        .depth-btn.primary:hover {
+            box-shadow: 0 0 16px var(--accent-glow);
+        }
+
+        .depth-btn.secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .depth-hint {
+            font-size: 11px;
+            font-weight: 400;
+            color: var(--text-muted);
+            display: block;
+            margin-top: 4px;
+        }
+
+        .depth-btn.primary .depth-hint { color: rgba(2, 8, 24, 0.6); }
+
+        /* ── Loading state ── */
+        .loading-section {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-status {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        /* ── Result state ── */
+        .result-section {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .copy-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: var(--radius);
+            font-family: var(--font-body);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .copy-btn:active {
+            transform: scale(0.98);
+        }
+
+        .copy-btn.copied {
+            background: #22c55e;
+        }
+
+        .packet-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 50vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+            padding: 0 4px;
+        }
+
+        .sources-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+        }
+
+        .sources-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .source-item {
+            font-size: 13px;
+            color: var(--text-secondary);
+            padding: 3px 0;
+        }
+
+        .source-item.primary::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .source-item.linked::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .gaps-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+        }
+
+        .gaps-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .gap-item {
+            font-size: 13px;
+            color: var(--text-secondary);
+            padding: 4px 0;
+            line-height: 1.5;
+        }
+
+        .new-query-btn {
+            width: 100%;
+            padding: 14px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-secondary);
+            font-family: var(--font-body);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all var(--transition);
+            margin-top: 8px;
+        }
+
+        .new-query-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* ── Error ── */
+        .error-msg {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            color: #fca5a5;
+            font-size: 14px;
+            display: none;
+            margin-top: 12px;
+        }
+
+        /* ── Auth ── */
+        .auth-section {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .auth-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 16px;
+            outline: none;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        .auth-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: var(--radius);
+            font-family: var(--font-body);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .auth-error {
+            color: #fca5a5;
+            font-size: 13px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Heartwood</div>
+            <div class="tagline">Context for your next AI conversation</div>
+        </div>
+
+        <!-- Auth -->
+        <div class="auth-section" id="authSection">
+            <div class="auth-title">Sign in</div>
+            <input type="email" class="auth-input" id="authEmail" placeholder="Email" autocomplete="email">
+            <input type="password" class="auth-input" id="authPassword" placeholder="Password" autocomplete="current-password">
+            <button class="auth-btn" id="authBtn" onclick="doLogin()">Sign in</button>
+            <div class="auth-error" id="authError"></div>
+        </div>
+
+        <!-- Input -->
+        <div class="input-section" id="inputSection">
+            <label class="query-label">What are you about to ask AI about?</label>
+            <input type="text" class="query-input" id="queryInput"
+                placeholder="e.g. portfolio construction, Heartwood architecture..."
+                autocomplete="off" autofocus>
+            <div class="depth-buttons">
+                <button class="depth-btn primary" onclick="generate('standard')">
+                    Standard
+                    <span class="depth-hint">~3 sec</span>
+                </button>
+                <button class="depth-btn secondary" onclick="generate('deep')">
+                    Deep
+                    <span class="depth-hint">+ reasoning report</span>
+                </button>
+            </div>
+            <div class="error-msg" id="errorMsg"></div>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading-section" id="loadingSection">
+            <div class="spinner"></div>
+            <div class="loading-status" id="loadingStatus">Searching your graph...</div>
+        </div>
+
+        <!-- Result -->
+        <div class="result-section" id="resultSection">
+            <button class="copy-btn" id="copyBtn" onclick="copyPacket()">Copy to Clipboard</button>
+            <div class="packet-box" id="packetBox"></div>
+            <div class="meta-row">
+                <span id="metaTokens"></span>
+                <span id="metaNotes"></span>
+            </div>
+            <div class="sources-section" id="sourcesSection">
+                <div class="sources-title">Sources</div>
+                <div id="sourcesList"></div>
+            </div>
+            <div class="gaps-section" id="gapsSection">
+                <div class="gaps-title">Questions worth asking</div>
+                <div id="gapsList"></div>
+            </div>
+            <button class="new-query-btn" onclick="resetToInput()">New query</button>
+        </div>
+    </div>
+
+    <script>
+        // ── State ──
+        let accessToken = localStorage.getItem('cerebro_token') || '';
+        let refreshToken = localStorage.getItem('cerebro_refresh') || '';
+        let packetText = '';
+
+        const API = window.location.origin;
+
+        // ── Init ──
+        (async function init() {
+            if (accessToken) {
+                // Validate token
+                try {
+                    const resp = await fetch(`${API}/api/auth/me`, {
+                        headers: { 'Authorization': `Bearer ${accessToken}` }
+                    });
+                    if (resp.ok) {
+                        showInput();
+                        return;
+                    }
+                    // Try refresh
+                    if (refreshToken) {
+                        const ok = await tryRefresh();
+                        if (ok) { showInput(); return; }
+                    }
+                } catch (e) {}
+            }
+            showAuth();
+        })();
+
+        async function tryRefresh() {
+            try {
+                const resp = await fetch(`${API}/api/auth/refresh`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh_token: refreshToken })
+                });
+                if (!resp.ok) return false;
+                const data = await resp.json();
+                accessToken = data.session.access_token;
+                refreshToken = data.session.refresh_token;
+                localStorage.setItem('cerebro_token', accessToken);
+                localStorage.setItem('cerebro_refresh', refreshToken);
+                return true;
+            } catch (e) { return false; }
+        }
+
+        async function doLogin() {
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value;
+            const errEl = document.getElementById('authError');
+            errEl.style.display = 'none';
+
+            if (!email || !password) {
+                errEl.textContent = 'Email and password required';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            try {
+                const resp = await fetch(`${API}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                if (!resp.ok) {
+                    errEl.textContent = 'Invalid credentials';
+                    errEl.style.display = 'block';
+                    return;
+                }
+                const data = await resp.json();
+                accessToken = data.session.access_token;
+                refreshToken = data.session.refresh_token;
+                localStorage.setItem('cerebro_token', accessToken);
+                localStorage.setItem('cerebro_refresh', refreshToken);
+                showInput();
+            } catch (e) {
+                errEl.textContent = 'Connection error';
+                errEl.style.display = 'block';
+            }
+        }
+
+        // ── View transitions ──
+        function showAuth() {
+            document.getElementById('authSection').style.display = 'flex';
+            document.getElementById('inputSection').style.display = 'none';
+            document.getElementById('loadingSection').style.display = 'none';
+            document.getElementById('resultSection').style.display = 'none';
+        }
+
+        function showInput() {
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('inputSection').style.display = 'flex';
+            document.getElementById('loadingSection').style.display = 'none';
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('errorMsg').style.display = 'none';
+        }
+
+        function showLoading() {
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('inputSection').style.display = 'none';
+            document.getElementById('loadingSection').style.display = 'flex';
+            document.getElementById('resultSection').style.display = 'none';
+        }
+
+        function showResult() {
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('inputSection').style.display = 'none';
+            document.getElementById('loadingSection').style.display = 'none';
+            document.getElementById('resultSection').style.display = 'flex';
+        }
+
+        function resetToInput() {
+            document.getElementById('queryInput').value = '';
+            document.getElementById('copyBtn').textContent = 'Copy to Clipboard';
+            document.getElementById('copyBtn').classList.remove('copied');
+            showInput();
+            document.getElementById('queryInput').focus();
+        }
+
+        // ── Generate ──
+        async function generate(depth) {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) {
+                document.getElementById('queryInput').focus();
+                return;
+            }
+
+            showLoading();
+            const statusEl = document.getElementById('loadingStatus');
+
+            // Animated status messages
+            statusEl.textContent = 'Searching your graph...';
+            const statusTimer = setTimeout(() => {
+                statusEl.textContent = 'Expanding linked notes...';
+                setTimeout(() => {
+                    statusEl.textContent = 'Synthesizing briefing...';
+                }, 1500);
+            }, 1200);
+
+            try {
+                const resp = await fetch(`${API}/api/context-packet`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify({ query, depth })
+                });
+
+                clearTimeout(statusTimer);
+
+                if (resp.status === 401) {
+                    // Token expired — try refresh
+                    const ok = await tryRefresh();
+                    if (ok) {
+                        generate(depth); // retry
+                        return;
+                    }
+                    showAuth();
+                    return;
+                }
+
+                const data = await resp.json();
+
+                if (data.error) {
+                    showInput();
+                    const errEl = document.getElementById('errorMsg');
+                    errEl.textContent = data.error;
+                    errEl.style.display = 'block';
+                    return;
+                }
+
+                // Render result
+                packetText = data.packet;
+                document.getElementById('packetBox').textContent = packetText;
+                document.getElementById('metaTokens').textContent = `~${data.token_estimate} tokens`;
+                document.getElementById('metaNotes').textContent = `${data.notes_used} notes used`;
+
+                // Sources
+                const sourcesList = document.getElementById('sourcesList');
+                sourcesList.innerHTML = '';
+                for (const src of data.sources || []) {
+                    const div = document.createElement('div');
+                    div.className = `source-item ${src.primary ? 'primary' : 'linked'}`;
+                    div.textContent = src.title;
+                    sourcesList.appendChild(div);
+                }
+
+                // Gaps
+                const gapsSection = document.getElementById('gapsSection');
+                const gapsList = document.getElementById('gapsList');
+                gapsList.innerHTML = '';
+                if (data.gaps && data.gaps.length > 0) {
+                    gapsSection.style.display = 'block';
+                    for (const gap of data.gaps) {
+                        const div = document.createElement('div');
+                        div.className = 'gap-item';
+                        div.textContent = gap;
+                        gapsList.appendChild(div);
+                    }
+                } else {
+                    gapsSection.style.display = 'none';
+                }
+
+                showResult();
+                // Scroll to top so copy button is visible
+                window.scrollTo(0, 0);
+
+            } catch (e) {
+                clearTimeout(statusTimer);
+                showInput();
+                const errEl = document.getElementById('errorMsg');
+                errEl.textContent = `Connection error: ${e.message}`;
+                errEl.style.display = 'block';
+            }
+        }
+
+        // ── Copy ──
+        async function copyPacket() {
+            const btn = document.getElementById('copyBtn');
+            try {
+                await navigator.clipboard.writeText(packetText);
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copy to Clipboard';
+                    btn.classList.remove('copied');
+                }, 2000);
+            } catch (e) {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = packetText;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copy to Clipboard';
+                    btn.classList.remove('copied');
+                }, 2000);
+            }
+        }
+
+        // Enter key triggers standard generation
+        document.getElementById('queryInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') generate('standard');
+        });
+
+        // Enter key on password field triggers login
+        document.getElementById('authPassword').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') doLogin();
+        });
+    </script>
+</body>
+
+</html>

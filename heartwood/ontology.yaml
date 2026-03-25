@@ -1,0 +1,189 @@
+# Heartwood Ontology
+# Defines valid node types, relationship types, and validation rules.
+# The engine reads this file and applies rules automatically.
+# Update this file when new note categories emerge.
+
+version: 1
+
+types:
+  hub:
+    description: Central index note that aggregates related notes
+    icon: "◉"
+    color: "#ffd700"
+    shape: dodecahedron
+    expected_links:
+      min: 3
+
+  anecdote:
+    description: A specific story or event, usually for the Lidia screenplay
+    icon: "A"
+    color: "#ff6b6b"
+    shape: tetrahedron
+    relationships:
+      features_character:
+        label: features
+        targets: [hub, profile]
+        cardinality: "1+"
+      part_of:
+        label: part of
+        targets: [hub]
+        cardinality: "0+"
+
+  research:
+    description: Factual research supporting anecdotes or projects
+    icon: "R"
+    color: "#4ecdc4"
+    shape: octahedron
+    relationships:
+      supports:
+        label: supports
+        targets: [anecdote, project, hub]
+        cardinality: "0+"
+
+  project:
+    description: An active build or initiative
+    icon: "P"
+    color: "#45b7d1"
+    shape: box
+    expected_links:
+      min: 1
+
+  skill:
+    description: A reusable Claude Code skill or hunt
+    icon: "S"
+    color: "#96ceb4"
+    shape: cone
+    relationships:
+      coordinated_by:
+        label: coordinated by
+        targets: [skill, hub]
+        cardinality: "0-1"
+
+  feedback:
+    description: User preference or behavioral instruction
+    icon: "F"
+    color: "#dda0dd"
+    shape: torus
+
+  profile:
+    description: Person or character note
+    icon: "U"
+    color: "#f4a460"
+    shape: icosahedron
+    relationships:
+      related_to:
+        label: related to
+        targets: [profile, hub]
+        cardinality: "0+"
+
+  capture:
+    description: Quick mobile capture, not yet curated
+    icon: "C"
+    color: "#778899"
+    shape: sphere
+    expected_links:
+      min: 0
+
+  daily:
+    description: Daily log note
+    icon: "D"
+    color: "#87ceeb"
+    shape: cylinder
+
+  reflection:
+    description: Reasoning engine output — findings, blind spots, meta-observations
+    icon: "⟳"
+    color: "#ff9f43"
+    shape: ring
+    expected_links:
+      min: 2
+
+  concept:
+    description: Abstract idea or framework
+    icon: "I"
+    color: "#a855f7"
+    shape: torusknot
+    expected_links:
+      min: 1
+
+  script:
+    description: Screenplay-related structural note
+    icon: "X"
+    color: "#e74c3c"
+    shape: dodecahedron
+    relationships:
+      part_of:
+        label: part of
+        targets: [hub, project]
+        cardinality: "0+"
+
+# Global relationship type definitions
+# Used in [[rel_type::Target]] syntax
+relationships:
+  features_character:
+    label: features
+    reverse_label: featured in
+  part_of:
+    label: part of
+    reverse_label: contains
+  supports:
+    label: supports
+    reverse_label: supported by
+  coordinated_by:
+    label: coordinated by
+    reverse_label: coordinates
+  related_to:
+    label: related to
+    reverse_label: related to
+  contradicts:
+    label: contradicts
+    reverse_label: contradicted by
+  precedes:
+    label: precedes
+    reverse_label: follows
+
+# Type inference rules: tag -> type mapping (priority order)
+# Explicit `type:` in frontmatter always wins.
+inference:
+  - tag: reflection
+    type: reflection
+  - tag: hub
+    type: hub
+  - tag: anecdote
+    type: anecdote
+  - tag: research
+    type: research
+  - tag: feedback
+    type: feedback
+  - tag: daily
+    type: daily
+  - tag: capture
+    type: capture
+  - tag: user
+    type: profile
+  - tag: people
+    type: profile
+  - tag: concepts
+    type: concept
+  - tag: meta
+    type: concept
+  - tag: script
+    type: script
+  - tag: project
+    type: project
+  - tag: projects
+    type: project
+  - tag: skills
+    type: skill
+  - tag: technology
+    type: project
+  - tag: architecture
+    type: project
+  - tag: onboarding
+    type: project
+  - tag: parenting
+    type: concept
+  - tag: insight
+    type: concept
+  - tag: education
+    type: concept

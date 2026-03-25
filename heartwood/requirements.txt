@@ -1,0 +1,21 @@
+# Heartwood — core dependencies
+PyYAML>=6.0
+pydantic>=2.0
+networkx>=3.0
+numpy>=1.26
+httpx>=0.28
+
+# LLM integration (reasoning engine, belief extraction, link prediction)
+anthropic>=0.40
+
+# Embedding model (local, runs on CPU)
+sentence-transformers>=3.0
+
+# Desktop app
+pywebview>=5.0
+
+# MCP server (Claude Code integration)
+mcp>=1.0
+
+# Optional
+python-dotenv>=1.0          # .env file support for API keys
