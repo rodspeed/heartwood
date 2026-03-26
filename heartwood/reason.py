@@ -2132,6 +2132,8 @@ def main():
                         help='Print a readable narrative summary to the terminal')
     parser.add_argument('--prune', action='store_true',
                         help='Remove ## Related links that fail graph-aware filtering')
+    parser.add_argument('--report-only', action='store_true',
+                        help='Generate the report and stop — skip post-run memory, belief revision, and link prediction')
     args = parser.parse_args()
 
     # Handle standalone commands first
@@ -2268,7 +2270,7 @@ def main():
         print('\n[narrate] Nothing notable to report.')
 
     # Phase 3: Post-run memory system
-    if api_key and not args.quiet and run_all:
+    if api_key and not args.quiet and run_all and not args.report_only:
         print('[reason] Running post-run memory system...')
         mem_results = post_run_memory(
             report, api_key, _call_haiku,
@@ -2283,7 +2285,7 @@ def main():
         print(f'[reason] Memory system: {successes}/4 steps succeeded')
 
     # Phase 4a: Incremental claim extraction (only modified notes)
-    if api_key and not args.quiet and run_all:
+    if api_key and not args.quiet and run_all and not args.report_only:
         print('[reason] Running incremental claim extraction...')
         try:
             claim_stats = extract_all_claims(model='claude-haiku-4-5-20251001')
@@ -2294,7 +2296,7 @@ def main():
             print(f'[reason] Claim extraction failed: {e}')
 
     # Phase 4b: Belief revision (3-layer contradiction detection)
-    if api_key and not args.quiet and run_all:
+    if api_key and not args.quiet and run_all and not args.report_only:
         print('[reason] Running belief revision...')
         try:
             rev_results = run_belief_revision(graph, api_key=api_key, call_llm=_call_haiku)
@@ -2306,7 +2308,7 @@ def main():
             print(f'[reason] Belief revision failed: {e}')
 
     # Phase 5: Link prediction
-    if api_key and not args.quiet and run_all:
+    if api_key and not args.quiet and run_all and not args.report_only:
         print('[reason] Running link prediction...')
         try:
             link_results = run_link_prediction(graph, ga, api_key=api_key, call_llm=_call_haiku)

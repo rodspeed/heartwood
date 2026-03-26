@@ -1919,7 +1919,7 @@ created: {today}
                 job['status'] = 'running'
                 job['progress'] = 'Running reasoning engine...'
                 reason_script = os.path.join(_app_dir(), 'reason.py')
-                cmd = [sys.executable, reason_script]
+                cmd = [sys.executable, reason_script, '--report-only']
                 if q:
                     cmd.append('--quiet')
                 result = subprocess.run(
