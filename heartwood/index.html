@@ -7460,10 +7460,11 @@
             const spread = 300;
             for (const id in nodeObjects) {
                 const obj = nodeObjects[id];
-                if (savedLayout && savedLayout[id] && savedLayout[id].z !== undefined) {
-                    obj.position = { x: savedLayout[id].x, y: savedLayout[id].y, z: savedLayout[id].z };
-                } else if (savedLayout && savedLayout[id]) {
-                    obj.position = { x: savedLayout[id].x, y: savedLayout[id].y, z: (Math.random() - 0.5) * spread * 0.5 };
+                const sl = savedLayout && savedLayout[id];
+                if (sl && Number.isFinite(sl.x) && Number.isFinite(sl.y) && Number.isFinite(sl.z)) {
+                    obj.position = { x: sl.x, y: sl.y, z: sl.z };
+                } else if (sl && Number.isFinite(sl.x) && Number.isFinite(sl.y)) {
+                    obj.position = { x: sl.x, y: sl.y, z: (Math.random() - 0.5) * spread * 0.5 };
                 } else {
                     obj.position = {
                         x: (Math.random() - 0.5) * spread,
@@ -8586,7 +8587,9 @@
             const positions = {};
             for (const id in nodeObjects) {
                 const p = nodeObjects[id].position;
-                positions[id] = { x: p.x, y: p.y, z: p.z };
+                if (Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.z)) {
+                    positions[id] = { x: p.x, y: p.y, z: p.z };
+                }
             }
             await api('save_layout', positions);
         }
