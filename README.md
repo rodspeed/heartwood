@@ -2,7 +2,7 @@
 
 A personal knowledge graph with a reasoning engine that thinks. Not a note-taking app — a system that compounds understanding across every run.
 
-Heartwood stores your knowledge as markdown notes linked by wikilinks, then runs a multi-phase reasoning pipeline that finds latent connections, detects contradictions, extracts beliefs, predicts missing links, and builds a compounding memory layer. Each run makes the next one smarter.
+Heartwood stores your knowledge as markdown notes linked by wikilinks, then runs a multi-phase reasoning pipeline that finds latent connections, detects contradictions, extracts beliefs, predicts missing links, and builds a compounding memory layer. Each run makes the next one smarter. It also works as a knowledge layer for AI agents — via MCP, any agent can search, read, and propose into your graph.
 
 ## Why Heartwood
 
@@ -77,6 +77,8 @@ python heartwood/reason.py --backup     # zip notes/ + .graph/ to timestamped ba
 ## MCP Server
 
 Heartwood ships with a Model Context Protocol server, so Claude (or any MCP-compatible agent) can query your knowledge graph directly.
+
+This turns Heartwood into long-term memory for your agents. Instead of starting every conversation from scratch, an agent connected to your graph can recall what you know, check what you believe, see what the reasoning engine has found, and propose new knowledge back into the graph. The agent doesn't just read your notes — it reads the structure, the beliefs, the contradictions, and the predictions that the reasoning engine has computed on top of them.
 
 ```bash
 python heartwood/mcp_server.py
@@ -166,7 +168,7 @@ Semantic: MiniLM-L6-v2 cosine similarity. Structural: PPR scores. Rule: best mat
 
 **LLM Reranking:** Top candidates go to Claude for YES/MAYBE/NO classification with relation type prediction from the ontology.
 
-Self-evaluated at **88% precision** (15/17 predictions confirmed by the graph owner, N=17).
+Early testing on 17 predictions showed 15 confirmed by the graph owner.
 
 ## Ontology
 
@@ -209,9 +211,9 @@ A few non-obvious choices and why they were made:
 
 - **No GPU required.** The embedding model (all-MiniLM-L6-v2) runs on CPU. First call takes ~2 seconds, then it's cached. This keeps the install simple and the hardware bar low.
 
-- **Haiku, not Opus.** The reasoning engine uses Claude Haiku for all LLM calls. The quality is sufficient for claim extraction, contradiction classification, and link reranking — and the cost is ~$0.003 per contradiction pair. The full pipeline costs < $0.10 per run.
+- **Haiku, not Opus.** The reasoning engine uses Claude Haiku for all LLM calls to minimize cost — ~$0.003 per contradiction pair, < $0.10 for a full pipeline run.
 
-- **Each post-run step is independent.** If reflection generation fails, summary update still runs. If summary update fails, rule extraction still runs. The report is always written. This is architecturally load-bearing.
+- **Each post-run step is independent.** If reflection generation fails, summary update still runs. If summary update fails, rule extraction still runs. A failure in one phase won't crash the next, though later phases may produce less complete results if earlier ones failed. The report is always written with metadata indicating which phases completed. This is architecturally load-bearing.
 
 - **Pydantic everywhere.** Claims, contradictions, revisions, predictions, living summary — all Pydantic v2 models. Validation at the boundary means the LLM can return garbage and the system catches it before state is corrupted.
 
@@ -233,12 +235,32 @@ A full run on a 170-note graph with ~3,100 claims costs < $0.10. Incremental run
 
 ## When Things Fail
 
-Every phase is independent. Partial failures don't corrupt state or block downstream phases.
+Every phase is independent. Partial failures don't corrupt state or block downstream phases. Every report includes a metadata header listing which phases completed, the model used, and whether the run was full or structural-only — so you can always tell what you're looking at.
+
+Heartwood assumes single-process access to the `notes/` and `.graph/` directories. Don't run the desktop app and MCP server simultaneously against the same data directory.
 
 - **Anthropic API down or rate-limited:** Reasoning engine falls back to `--quiet` mode (structural passes only). Memory, beliefs, revision, and link prediction are skipped. The report is still written with structural results.
 - **Embedding model fails to load:** Graph analysis and reasoning still work (they don't need embeddings). Belief revision Layer 2 and link prediction semantic scoring are skipped.
 - **LLM returns malformed JSON:** Pydantic validation catches it. The specific step (e.g., living summary update) fails but the next step proceeds. Existing state is never overwritten with invalid data.
 - **A note has no wikilinks:** It still gets embedded, typed by tags, and included in claim extraction. It will show up as "underlinked" in the Knowledge Gaps pass.
+
+## What Data Leaves Your Machine
+
+Heartwood is local-first, but the reasoning engine sends note content to the Anthropic API. Here's exactly what goes out:
+
+- **Reasoning passes:** Note titles, tags, and content previews (~500 chars each) are sent to Claude Haiku for interpretation. Full note content is not sent.
+- **Claim extraction:** Full note content is sent to extract atomic beliefs. One API call per new or modified note.
+- **Belief revision:** Pairs of extracted claims (not full notes) are sent for contradiction classification.
+- **Link prediction:** Note titles and relation context are sent for reranking.
+- **Embeddings:** Computed locally via MiniLM-L6-v2. Never sent to any API.
+
+The `--quiet` flag runs structural analysis only — zero API calls, nothing leaves your machine.
+
+## Running Tests
+
+```bash
+pytest heartwood/tests/
+```
 
 ## License
 
