@@ -3135,7 +3135,7 @@ Your notes are stored with Row-Level Security — every query is scoped to your 
             window = wv.windows[0] if wv.windows else None
             if not window:
                 return {'error': 'No window available'}
-            result = window.create_file_dialog(wv.FOLDER_DIALOG)
+            result = window.create_file_dialog(wv.FileDialog.FOLDER)
             if result and len(result) > 0:
                 folder = result[0]
                 # Count markdown files up to depth 3
@@ -3169,7 +3169,7 @@ Your notes are stored with Row-Level Security — every query is scoped to your 
                 return {'error': 'No window available'}
             file_types = ('Markdown files (*.md;*.txt;*.markdown)',)
             result = window.create_file_dialog(
-                wv.OPEN_DIALOG,
+                wv.FileDialog.OPEN,
                 allow_multiple=True,
                 file_types=file_types,
             )
