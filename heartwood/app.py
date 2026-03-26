@@ -452,6 +452,49 @@ def infer_type(meta, ontology=None):
     return None
 
 
+# ---------------------------------------------------------------------------
+# Helpers that replace the proprietary discover module for open-source usage
+# ---------------------------------------------------------------------------
+
+def _build_entry_from_content(filename, content):
+    """Parse a markdown file into an import entry dict.
+
+    Extracts title, tags, and body from frontmatter if present;
+    falls back to deriving the title from the filename.
+    """
+    meta, body = parse_frontmatter(content)
+    # Title: frontmatter > first H1 > filename
+    title = meta.get('title', '')
+    if not title:
+        for line in body.split('\n'):
+            if line.startswith('# '):
+                title = line[2:].strip()
+                break
+    if not title:
+        title = Path(filename).stem.replace('-', ' ').replace('_', ' ').title()
+    tags = meta.get('tags', [])
+    if isinstance(tags, str):
+        tags = [t.strip() for t in tags.split(',') if t.strip()]
+    proposed_filename = re.sub(r'[^\w\-.]', '-', filename.lower()).strip('-')
+    if not proposed_filename.endswith('.md'):
+        proposed_filename = Path(proposed_filename).stem + '.md'
+    return {
+        'proposed_filename': proposed_filename,
+        'proposed_title': title,
+        'proposed_tags': tags,
+        'body': body,
+    }
+
+
+def _create_note_content(title, tags, body):
+    """Build a complete markdown note with YAML frontmatter."""
+    import datetime
+    tags_str = ', '.join(tags) if tags else ''
+    created = datetime.date.today().isoformat()
+    lines = ['---', f'title: {title}', f'tags: [{tags_str}]', f'created: {created}', '---', '', body, '']
+    return '\n'.join(lines)
+
+
 class Api:
     """Python API exposed to the JavaScript frontend via pywebview."""
 
@@ -2036,16 +2079,15 @@ created: {today}
         Args: files - list of {filename, content} dicts from drag-and-drop.
         """
         try:
-            from discover import build_entry_from_content, create_note_content_from_body
             imported = 0
             seen = set()
             for f in files[:500]:
-                entry = build_entry_from_content(f['filename'], f['content'])
+                entry = _build_entry_from_content(f['filename'], f['content'])
                 node_id = filename_to_id(entry['proposed_filename'])
                 if node_id in seen or self._storage.note_exists(node_id):
                     continue
                 seen.add(node_id)
-                content = create_note_content_from_body(
+                content = _create_note_content(
                     entry['proposed_title'],
                     entry['proposed_tags'],
                     entry['body'],
@@ -2074,7 +2116,6 @@ created: {today}
         }
         """
         from difflib import SequenceMatcher
-        from discover import build_entry_from_content
 
         thresholds = thresholds or {}
         thresh_title = thresholds.get('title', 0.85)
@@ -2104,7 +2145,7 @@ created: {today}
         seen_ids = set()
 
         for f in files:
-            entry = build_entry_from_content(f['filename'], f['content'])
+            entry = _build_entry_from_content(f['filename'], f['content'])
             node_id = filename_to_id(entry['proposed_filename'])
 
             # Dedup within the upload batch
@@ -2211,7 +2252,7 @@ created: {today}
             },
         }
 
-    def execute_batch_upload(self, decisions):
+    def execute_batch_upload(self, decisions, _progress_cb=None):
         """Execute batch upload after user review.
 
         Args: decisions - list of {
@@ -2219,19 +2260,31 @@ created: {today}
             entry: {proposed_title, proposed_tags, body, node_id, ...},
             merge_target_id: optional string (for merge action)
         }
-        Returns: {success, imported, merged, skipped, suggestions}
+        Returns: {success, imported, merged, skipped}
         """
-        from discover import create_note_content_from_body
-
         imported = 0
         merged = 0
         skipped_count = 0
         new_ids = []
+        total = len(decisions)
 
-        for dec in decisions:
+        for i, dec in enumerate(decisions):
             action = dec.get('action', 'skip')
             entry = dec.get('entry', {})
             node_id = entry.get('node_id', '')
+
+            # Send progress to frontend
+            if total > 10 and i % 5 == 0:
+                try:
+                    import webview as wv
+                    if wv.windows:
+                        pct = round(100 * i / total)
+                        title = entry.get('proposed_title', node_id)[:40]
+                        wv.windows[0].evaluate_js(
+                            f'if(typeof _batchImportProgress==="function")_batchImportProgress({pct},"{title.replace(chr(34), chr(39))}")'
+                        )
+                except Exception:
+                    pass
 
             if action == 'skip':
                 skipped_count += 1
@@ -2283,7 +2336,7 @@ created: {today}
                     if self._storage.note_exists(node_id):
                         skipped_count += 1
                         continue
-                    content = create_note_content_from_body(
+                    content = _create_note_content(
                         entry.get('proposed_title', node_id),
                         entry.get('proposed_tags', []),
                         entry.get('body', ''),
@@ -2299,35 +2352,79 @@ created: {today}
                     skipped_count += 1
                     continue
 
-        # Gather auto-link suggestions for all new/merged notes
-        suggestions = []
-        for nid in new_ids[:20]:  # cap to avoid slow-down
-            note = self._storage.read_note(nid)
-            if note:
-                sug = self._get_auto_link_suggestions(nid, note.raw_content)
-                for s in sug[:3]:
-                    suggestions.append({'source_id': nid, 'source_title': note.title, **s})
-
         return {
             'success': True,
             'imported': imported,
             'merged': merged,
             'skipped': skipped_count,
-            'suggestions': suggestions,
         }
 
     def batch_upload_from_folder(self, folder_path):
-        """Desktop mode: scan a folder for .md files and run batch upload pipeline."""
-        from discover import scan_directory
-        entries = scan_directory(folder_path, depth=3, category='custom')
+        """Desktop mode: scan a folder for .md/.txt/.markdown files and run batch upload pipeline."""
+        EXTENSIONS = {'.md', '.txt', '.markdown'}
         files = []
-        for entry in entries:
-            try:
-                with open(entry['source_path'], 'r', encoding='utf-8', errors='replace') as fh:
-                    files.append({'filename': os.path.basename(entry['source_path']), 'content': fh.read()})
-            except Exception:
+        folder_path = os.path.abspath(folder_path)
+        for root, dirs, filenames in os.walk(folder_path):
+            # Limit depth to 3 levels
+            depth = root.replace(folder_path, '').count(os.sep)
+            if depth >= 3:
+                dirs.clear()
                 continue
+            for fname in filenames:
+                if Path(fname).suffix.lower() in EXTENSIONS:
+                    fp = os.path.join(root, fname)
+                    try:
+                        with open(fp, 'r', encoding='utf-8', errors='replace') as fh:
+                            files.append({'filename': fname, 'content': fh.read()})
+                    except Exception:
+                        continue
         return self.batch_upload(files)
+
+    def batch_import_github(self, repo_url):
+        """Import markdown files from a public GitHub repository.
+
+        Clones the repo to a temp directory, extracts .md/.txt/.markdown files,
+        and feeds them into the standard batch upload pipeline.
+
+        Args: repo_url - GitHub URL (e.g. 'https://github.com/user/repo')
+        Returns: batch_upload result dict, or {error: ...} on failure.
+        """
+        import tempfile
+        import shutil
+        import subprocess
+
+        # Normalize URL — accept with or without .git suffix
+        url = repo_url.strip().rstrip('/')
+        if not url.endswith('.git'):
+            url += '.git'
+
+        tmp_dir = tempfile.mkdtemp(prefix='heartwood-gh-')
+        try:
+            result = subprocess.run(
+                ['git', 'clone', '--depth', '1', url, tmp_dir],
+                capture_output=True, text=True, timeout=120,
+            )
+            if result.returncode != 0:
+                return {'error': f'Git clone failed: {result.stderr.strip()}'}
+            return self.batch_upload_from_folder(tmp_dir)
+        except subprocess.TimeoutExpired:
+            return {'error': 'Git clone timed out (120s limit)'}
+        except FileNotFoundError:
+            return {'error': 'Git is not installed or not in PATH'}
+        except Exception as e:
+            return {'error': str(e)}
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    # --- Aliases so pywebview.api matches the frontend route names ---
+    def batch_preview(self, files, thresholds=None):
+        return self.batch_upload(files, thresholds)
+
+    def batch_execute(self, decisions):
+        return self.execute_batch_upload(decisions)
+
+    def batch_folder(self, folder_path):
+        return self.batch_upload_from_folder(folder_path)
 
     def generate_ontology(self, preview_only=False):
         """Auto-generate an ontology tailored to the user's notes.
@@ -3041,14 +3138,51 @@ Your notes are stored with Row-Level Security — every query is scoped to your 
             result = window.create_file_dialog(wv.FOLDER_DIALOG)
             if result and len(result) > 0:
                 folder = result[0]
-                from discover import scan_directory
-                entries = scan_directory(folder, depth=3, category='custom')
+                # Count markdown files up to depth 3
+                count = 0
+                exts = {'.md', '.txt', '.markdown'}
+                for root, dirs, filenames in os.walk(folder):
+                    depth = root.replace(folder, '').count(os.sep)
+                    if depth >= 3:
+                        dirs.clear()
+                        continue
+                    count += sum(1 for f in filenames if Path(f).suffix.lower() in exts)
                 return {
                     'path': folder,
-                    'file_count': len(entries),
-                    'description': f'{len(entries)} markdown files found',
+                    'file_count': count,
+                    'description': f'{count} markdown files found',
                 }
             return {'cancelled': True}
+        except Exception as e:
+            return {'error': str(e)}
+
+    def browse_files(self):
+        """Open a native file picker dialog filtered to markdown files.
+
+        Returns a list of {filename, content} dicts ready for the batch pipeline,
+        or {cancelled: True} / {error: ...}.
+        """
+        try:
+            import webview as wv
+            window = wv.windows[0] if wv.windows else None
+            if not window:
+                return {'error': 'No window available'}
+            file_types = ('Markdown files (*.md;*.txt;*.markdown)',)
+            result = window.create_file_dialog(
+                wv.OPEN_DIALOG,
+                allow_multiple=True,
+                file_types=file_types,
+            )
+            if not result or len(result) == 0:
+                return {'cancelled': True}
+            files = []
+            for fp in result:
+                try:
+                    with open(fp, 'r', encoding='utf-8', errors='replace') as fh:
+                        files.append({'filename': os.path.basename(fp), 'content': fh.read()})
+                except Exception:
+                    continue
+            return {'files': files, 'file_count': len(files)}
         except Exception as e:
             return {'error': str(e)}
 

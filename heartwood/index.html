@@ -4851,6 +4851,17 @@
                     <div id="batch-file-count" style="margin-top:8px;font-size:12px;color:var(--text-secondary)"></div>
                     <input type="file" id="batch-file-input" multiple accept=".md,.txt,.markdown">
                 </div>
+                <div style="display:flex;align-items:center;gap:8px;margin:10px 0">
+                    <div style="flex:1;height:1px;background:var(--border)"></div>
+                    <span style="font-size:11px;color:var(--text-secondary)">or import from GitHub</span>
+                    <div style="flex:1;height:1px;background:var(--border)"></div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <input type="text" id="batch-github-url" placeholder="https://github.com/user/repo"
+                        style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-size:13px">
+                    <button class="btn btn-primary" id="batch-github-import" style="white-space:nowrap;padding:8px 14px">Clone &amp; Import</button>
+                </div>
+                <div id="batch-github-status" style="font-size:12px;color:var(--text-secondary);margin-top:4px;display:none"></div>
                 <details class="batch-sensitivity">
                     <summary>Duplicate sensitivity</summary>
                     <div class="batch-slider-row">
@@ -4883,6 +4894,15 @@
                 <h2>Review Import</h2>
                 <div class="batch-stats" id="batch-stats"></div>
                 <div id="batch-sections" style="flex:1;overflow-y:auto;max-height:50vh"></div>
+                <div id="batch-progress" style="display:none;margin:12px 0">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:4px">
+                        <span id="batch-progress-label">Importing...</span>
+                        <span id="batch-progress-pct">0%</span>
+                    </div>
+                    <div style="height:6px;border-radius:3px;background:var(--bg-secondary);overflow:hidden">
+                        <div id="batch-progress-bar" style="height:100%;width:0%;background:var(--accent);border-radius:3px;transition:width 0.3s ease"></div>
+                    </div>
+                </div>
                 <div class="modal-actions">
                     <button class="btn" id="batch-back">Back</button>
                     <button class="btn btn-primary" id="batch-import">Import</button>
@@ -4930,9 +4950,23 @@
                     so you don't have to start from scratch.
                 </p>
                 <div id="onboard-sources"></div>
-                <div class="onboard-browse" id="onboard-browse">
-                    + Browse for a folder of markdown files...
+                <div class="onboard-browse" id="onboard-browse-files">
+                    + Browse for markdown files...
                 </div>
+                <div class="onboard-browse" id="onboard-browse-folder" style="margin-top:4px;font-size:12px;opacity:0.7">
+                    + Or select an entire folder...
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;margin:12px 0 8px">
+                    <div style="flex:1;height:1px;background:var(--border)"></div>
+                    <span style="font-size:11px;color:var(--text-secondary)">or import from GitHub</span>
+                    <div style="flex:1;height:1px;background:var(--border)"></div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <input type="text" id="onboard-github-url" placeholder="https://github.com/user/repo"
+                        style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-size:13px">
+                    <button class="btn btn-primary" id="onboard-github-import" style="white-space:nowrap;padding:8px 14px">Clone &amp; Import</button>
+                </div>
+                <div id="onboard-github-status" style="font-size:12px;color:var(--text-secondary);margin-top:4px;display:none"></div>
                 <div class="modal-actions">
                     <button class="btn" id="onboard-skip">Skip &mdash; start empty</button>
                     <button class="btn btn-primary" id="onboard-next-1" disabled>
@@ -4949,6 +4983,15 @@
                 </p>
                 <div id="onboard-preview-stats" class="preview-stats"></div>
                 <div id="onboard-preview-list" class="preview-list"></div>
+                <div id="onboard-progress" style="display:none;margin:12px 0">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:4px">
+                        <span id="onboard-progress-label">Importing...</span>
+                        <span id="onboard-progress-pct">0%</span>
+                    </div>
+                    <div style="height:6px;border-radius:3px;background:var(--bg-secondary);overflow:hidden">
+                        <div id="onboard-progress-bar" style="height:100%;width:0%;background:var(--accent);border-radius:3px;transition:width 0.3s ease"></div>
+                    </div>
+                </div>
                 <div class="modal-actions">
                     <button class="btn" id="onboard-back-2">Back</button>
                     <button class="btn btn-primary" id="onboard-import">
@@ -5791,6 +5834,7 @@
             is_first_launch:         { verb: 'GET',    path: () => '/api/onboarding/status' },
             detect_sources:          { verb: 'GET',    path: () => '/api/onboarding/sources' },
             browse_folder:           { verb: 'POST',   path: () => '/api/onboarding/browse' },
+            browse_files:            { verb: 'POST',   path: () => '/api/onboarding/browse-files' },
             preview_import:          { verb: 'POST',   path: () => '/api/onboarding/preview',  body: (source_paths) => ({ source_paths }) },
             execute_import:          { verb: 'POST',   path: () => '/api/onboarding/import',   body: (entries) => ({ entries }) },
             skip_onboarding:         { verb: 'POST',   path: () => '/api/onboarding/skip' },
@@ -5805,6 +5849,7 @@
             batch_preview:           { verb: 'POST',   path: () => '/api/batch/preview',  body: (files, thresholds) => ({ files, thresholds }) },
             batch_execute:           { verb: 'POST',   path: () => '/api/batch/execute',  body: (decisions) => ({ decisions }) },
             batch_folder:            { verb: 'POST',   path: () => '/api/batch/folder',   body: (folder_path) => ({ folder_path }) },
+            batch_import_github:     { verb: 'POST',   path: () => '/api/batch/github',   body: (repo_url) => ({ repo_url }) },
         };
 
         function enc(v) { return encodeURIComponent(v); }
@@ -10764,6 +10809,24 @@
         let _batchManifest = null;
         let _batchDecisions = {};
 
+        // Global progress callback — called from Python via evaluate_js
+        window._batchImportProgress = function(pct, title) {
+            // Update batch modal progress
+            const bp = document.getElementById('batch-progress');
+            if (bp && bp.style.display !== 'none') {
+                document.getElementById('batch-progress-bar').style.width = pct + '%';
+                document.getElementById('batch-progress-pct').textContent = pct + '%';
+                document.getElementById('batch-progress-label').textContent = title || 'Importing...';
+            }
+            // Update onboarding progress
+            const op = document.getElementById('onboard-progress');
+            if (op && op.style.display !== 'none') {
+                document.getElementById('onboard-progress-bar').style.width = pct + '%';
+                document.getElementById('onboard-progress-pct').textContent = pct + '%';
+                document.getElementById('onboard-progress-label').textContent = title || 'Importing...';
+            }
+        };
+
         function _batchReset() {
             _batchFiles = [];
             _batchManifest = null;
@@ -10941,6 +11004,7 @@
             const btn = document.getElementById('batch-import');
             btn.disabled = true;
             btn.textContent = 'Importing...';
+            document.getElementById('batch-progress').style.display = '';
 
             const allEntries = [..._batchManifest.auto_import, ..._batchManifest.needs_review, ..._batchManifest.skipped];
             const decisions = allEntries.map(entry => {
@@ -12051,6 +12115,36 @@
             document.getElementById('batch-browse').addEventListener('click', () => document.getElementById('batch-file-input').click());
             document.getElementById('batch-file-input').addEventListener('change', (e) => _batchOnFiles(e.target.files));
             document.getElementById('batch-analyze').addEventListener('click', _batchAnalyze);
+            document.getElementById('batch-github-import').addEventListener('click', async () => {
+                const urlInput = document.getElementById('batch-github-url');
+                const statusEl = document.getElementById('batch-github-status');
+                const url = urlInput.value.trim();
+                if (!url) { urlInput.focus(); return; }
+                const btn = document.getElementById('batch-github-import');
+                btn.disabled = true;
+                btn.textContent = 'Cloning…';
+                statusEl.style.display = 'block';
+                statusEl.textContent = 'Cloning repository and scanning for markdown files…';
+                try {
+                    const result = await api('batch_import_github', url);
+                    if (!result || result.error) {
+                        statusEl.style.color = 'var(--error, #f44)';
+                        statusEl.textContent = result?.error || 'Clone failed';
+                        return;
+                    }
+                    // Feed result into the normal batch review flow
+                    _batchManifest = result;
+                    _batchSetStep('review');
+                    _batchRenderReview();
+                    statusEl.style.display = 'none';
+                } catch (e) {
+                    statusEl.style.color = 'var(--error, #f44)';
+                    statusEl.textContent = 'Error: ' + e.message;
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Clone & Import';
+                }
+            });
             ['title', 'content', 'skip'].forEach(name => {
                 document.getElementById('batch-thresh-' + name).addEventListener('input', () => _batchUpdateSlider(name));
             });
@@ -12240,6 +12334,7 @@
             let onboardSelectedSources = [];
             let onboardManifest = null;
             let onboardCustomSources = [];
+            let onboardBrowsedFiles = [];  // {filename, content} from file picker or GitHub
 
             function onboardSetStep(step) {
                 document.querySelectorAll('.onboard-step').forEach(s => s.classList.remove('active'));
@@ -12251,7 +12346,8 @@
             }
 
             function onboardUpdateNextButton() {
-                const hasSelection = onboardSelectedSources.length > 0 || onboardCustomSources.length > 0;
+                const hasSelection = onboardSelectedSources.length > 0 || onboardCustomSources.length > 0
+                    || onboardBrowsedFiles.length > 0 || (onboardManifest && onboardManifest._fromBatch);
                 document.getElementById('onboard-next-1').disabled = !hasSelection;
             }
 
@@ -12304,29 +12400,42 @@
                 showModal('modal-onboarding');
             }
 
-            // Browse folder
-            document.getElementById('onboard-browse').addEventListener('click', async () => {
+            // Helper: add a source card to onboarding UI
+            function _onboardAddSourceCard(name, desc, count) {
+                const container = document.getElementById('onboard-sources');
+                const card = document.createElement('label');
+                card.className = 'source-card selected';
+                card.innerHTML = `
+                    <input type="checkbox" checked disabled>
+                    <div class="source-card-info">
+                        <div class="source-card-name">${escapeHtml(name)}</div>
+                        <div class="source-card-desc">${escapeHtml(desc)}</div>
+                    </div>
+                    <div class="source-card-count">${count} files</div>
+                `;
+                container.appendChild(card);
+                onboardUpdateNextButton();
+            }
+
+            // Browse files (file picker — users can see and select .md files)
+            document.getElementById('onboard-browse-files').addEventListener('click', async () => {
+                const result = await api('browse_files');
+                if (result && !result.cancelled && !result.error && result.files?.length > 0) {
+                    onboardBrowsedFiles.push(...result.files);
+                    _onboardAddSourceCard('Selected Files', `${result.file_count} markdown files`, result.file_count);
+                } else if (result && result.error) {
+                    toast(result.error, 'error');
+                } else if (result && result.file_count === 0) {
+                    toast('No files selected', 'info');
+                }
+            });
+
+            // Browse folder (folder picker — secondary option)
+            document.getElementById('onboard-browse-folder').addEventListener('click', async () => {
                 const result = await api('browse_folder');
                 if (result && !result.cancelled && !result.error && result.file_count > 0) {
-                    onboardCustomSources.push({
-                        path: result.path,
-                        category: 'custom',
-                    });
-                    // Add a card for the custom source
-                    const container = document.getElementById('onboard-sources');
-                    const idx = 'custom-' + onboardCustomSources.length;
-                    const card = document.createElement('label');
-                    card.className = 'source-card selected';
-                    card.innerHTML = `
-                        <input type="checkbox" checked disabled>
-                        <div class="source-card-info">
-                            <div class="source-card-name">Custom Folder</div>
-                            <div class="source-card-desc">${escapeHtml(result.path)}</div>
-                        </div>
-                        <div class="source-card-count">${result.file_count} files</div>
-                    `;
-                    container.appendChild(card);
-                    onboardUpdateNextButton();
+                    onboardCustomSources.push({ path: result.path, category: 'custom' });
+                    _onboardAddSourceCard('Folder', result.path, result.file_count);
                 } else if (result && result.error) {
                     toast(result.error, 'error');
                 } else if (result && result.file_count === 0) {
@@ -12334,54 +12443,146 @@
                 }
             });
 
+            // GitHub import (onboarding)
+            document.getElementById('onboard-github-import').addEventListener('click', async () => {
+                const urlInput = document.getElementById('onboard-github-url');
+                const statusEl = document.getElementById('onboard-github-status');
+                const url = urlInput.value.trim();
+                if (!url) { urlInput.focus(); return; }
+                const btn = document.getElementById('onboard-github-import');
+                btn.disabled = true;
+                btn.textContent = 'Cloning\u2026';
+                statusEl.style.display = 'block';
+                statusEl.style.color = 'var(--text-secondary)';
+                statusEl.textContent = 'Cloning repository and scanning for markdown files\u2026';
+                try {
+                    const result = await api('batch_import_github', url);
+                    if (!result || result.error) {
+                        statusEl.style.color = 'var(--error, #f44)';
+                        statusEl.textContent = result?.error || 'Clone failed';
+                        return;
+                    }
+                    const count = (result.auto_import?.length || 0)
+                        + (result.needs_review?.length || 0)
+                        + (result.skipped?.length || 0);
+                    if (count === 0) {
+                        statusEl.textContent = 'No markdown files found in that repository';
+                        return;
+                    }
+                    // Store the batch manifest so Step 1->2 can use it directly
+                    onboardManifest = result;
+                    onboardManifest._fromBatch = true;
+                    _onboardAddSourceCard('GitHub', url, count);
+                    statusEl.style.display = 'none';
+                } catch (e) {
+                    statusEl.style.color = 'var(--error, #f44)';
+                    statusEl.textContent = 'Error: ' + e.message;
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Clone & Import';
+                }
+            });
+
             // Step 1 -> Step 2
             document.getElementById('onboard-next-1').addEventListener('click', async () => {
                 const allSources = [...onboardSelectedSources, ...onboardCustomSources];
-                if (allSources.length === 0) return;
+                const hasBrowsedFiles = onboardBrowsedFiles.length > 0;
+                const hasBatchManifest = onboardManifest && onboardManifest._fromBatch;
+                if (allSources.length === 0 && !hasBrowsedFiles && !hasBatchManifest) return;
 
                 document.getElementById('onboard-next-1').textContent = 'Loading...';
                 document.getElementById('onboard-next-1').disabled = true;
 
-                onboardManifest = await api('preview_import', allSources);
-
-                // Show stats
-                const stats = onboardManifest.stats || {};
-                document.getElementById('onboard-preview-stats').innerHTML = `
-                    <div class="preview-stat">
-                        <div class="preview-stat-value">${stats.total || 0}</div>
-                        <div class="preview-stat-label">Notes</div>
-                    </div>
-                    <div class="preview-stat">
-                        <div class="preview-stat-value">${stats.cross_references || 0}</div>
-                        <div class="preview-stat-label">Cross-refs</div>
-                    </div>
-                    <div class="preview-stat">
-                        <div class="preview-stat-value">${stats.with_frontmatter || 0}</div>
-                        <div class="preview-stat-label">With metadata</div>
-                    </div>
-                    <div class="preview-stat">
-                        <div class="preview-stat-value">${(stats.total_words || 0).toLocaleString()}</div>
-                        <div class="preview-stat-label">Words</div>
-                    </div>
-                `;
-                if (stats.capped) {
-                    document.getElementById('onboard-preview-stats').innerHTML +=
-                        '<div style="color:var(--accent);font-size:11px;width:100%;text-align:center;margin-top:8px">' +
-                        'Capped at 500 files. Consider selecting fewer source directories.</div>';
+                // Route A: Files from file picker — run through batch pipeline
+                if (hasBrowsedFiles && !hasBatchManifest) {
+                    onboardManifest = await api('batch_preview', onboardBrowsedFiles);
+                    if (onboardManifest) onboardManifest._fromBatch = true;
+                }
+                // Route B: GitHub already set onboardManifest._fromBatch — nothing to fetch
+                // Route C: Folder sources — use preview_import (legacy path)
+                if (!hasBatchManifest && !hasBrowsedFiles && allSources.length > 0) {
+                    onboardManifest = await api('preview_import', allSources);
                 }
 
-                // Show entry list
-                const entries = onboardManifest.entries || [];
-                document.getElementById('onboard-preview-list').innerHTML = entries.map(e => `
-                    <div class="preview-entry">
-                        <span class="preview-entry-title">${escapeHtml(e.proposed_title)}</span>
-                        <span class="preview-entry-tags">
-                            ${(e.proposed_tags || []).map(t =>
-                                `<span class="preview-entry-tag">${escapeHtml(t)}</span>`
-                            ).join('')}
-                        </span>
-                    </div>
-                `).join('');
+                if (!onboardManifest) {
+                    toast('Failed to analyze files', 'error');
+                    document.getElementById('onboard-next-1').textContent = 'Next \u2014 preview import';
+                    document.getElementById('onboard-next-1').disabled = false;
+                    return;
+                }
+
+                // Render preview — batch manifests have a different shape
+                if (onboardManifest._fromBatch) {
+                    const stats = onboardManifest.stats || {};
+                    document.getElementById('onboard-preview-stats').innerHTML = `
+                        <div class="preview-stat">
+                            <div class="preview-stat-value">${stats.total || 0}</div>
+                            <div class="preview-stat-label">Total</div>
+                        </div>
+                        <div class="preview-stat">
+                            <div class="preview-stat-value">${stats.new || 0}</div>
+                            <div class="preview-stat-label">New</div>
+                        </div>
+                        <div class="preview-stat">
+                            <div class="preview-stat-value">${stats.review || 0}</div>
+                            <div class="preview-stat-label">Review</div>
+                        </div>
+                        <div class="preview-stat">
+                            <div class="preview-stat-value">${stats.skipped || 0}</div>
+                            <div class="preview-stat-label">Skipped</div>
+                        </div>
+                    `;
+                    const entries = [
+                        ...(onboardManifest.auto_import || []),
+                        ...(onboardManifest.needs_review || []),
+                    ];
+                    document.getElementById('onboard-preview-list').innerHTML = entries.map(e => `
+                        <div class="preview-entry">
+                            <span class="preview-entry-title">${escapeHtml(e.proposed_title)}</span>
+                            <span class="preview-entry-tags">
+                                ${(e.proposed_tags || []).map(t =>
+                                    `<span class="preview-entry-tag">${escapeHtml(t)}</span>`
+                                ).join('')}
+                            </span>
+                        </div>
+                    `).join('');
+                } else {
+                    const stats = onboardManifest.stats || {};
+                    document.getElementById('onboard-preview-stats').innerHTML = `
+                        <div class="preview-stat">
+                            <div class="preview-stat-value">${stats.total || 0}</div>
+                            <div class="preview-stat-label">Notes</div>
+                        </div>
+                        <div class="preview-stat">
+                            <div class="preview-stat-value">${stats.cross_references || 0}</div>
+                            <div class="preview-stat-label">Cross-refs</div>
+                        </div>
+                        <div class="preview-stat">
+                            <div class="preview-stat-value">${stats.with_frontmatter || 0}</div>
+                            <div class="preview-stat-label">With metadata</div>
+                        </div>
+                        <div class="preview-stat">
+                            <div class="preview-stat-value">${(stats.total_words || 0).toLocaleString()}</div>
+                            <div class="preview-stat-label">Words</div>
+                        </div>
+                    `;
+                    if (stats.capped) {
+                        document.getElementById('onboard-preview-stats').innerHTML +=
+                            '<div style="color:var(--accent);font-size:11px;width:100%;text-align:center;margin-top:8px">' +
+                            'Capped at 500 files. Consider selecting fewer source directories.</div>';
+                    }
+                    const entries = onboardManifest.entries || [];
+                    document.getElementById('onboard-preview-list').innerHTML = entries.map(e => `
+                        <div class="preview-entry">
+                            <span class="preview-entry-title">${escapeHtml(e.proposed_title)}</span>
+                            <span class="preview-entry-tags">
+                                ${(e.proposed_tags || []).map(t =>
+                                    `<span class="preview-entry-tag">${escapeHtml(t)}</span>`
+                                ).join('')}
+                            </span>
+                        </div>
+                    `).join('');
+                }
 
                 document.getElementById('onboard-next-1').textContent = 'Next \u2014 preview import';
                 onboardUpdateNextButton();
@@ -12398,16 +12599,37 @@
                 const btn = document.getElementById('onboard-import');
                 btn.textContent = 'Importing...';
                 btn.disabled = true;
+                document.getElementById('onboard-progress').style.display = '';
 
-                const entries = onboardManifest.entries || [];
-                const result = await api('execute_import', entries);
+                let result;
+                if (onboardManifest._fromBatch) {
+                    // Batch path: auto-import all, create for needs_review
+                    const decisions = [
+                        ...(onboardManifest.auto_import || []).map(e => ({
+                            action: 'create', entry: e,
+                        })),
+                        ...(onboardManifest.needs_review || []).map(e => ({
+                            action: 'create', entry: e,
+                        })),
+                    ];
+                    result = await api('batch_execute', decisions);
+                    if (result && result.success) {
+                        result.imported = (result.imported || 0) + (result.merged || 0);
+                    }
+                    // Mark onboarding complete
+                    await api('skip_onboarding');
+                } else {
+                    // Legacy path: execute_import
+                    const entries = onboardManifest.entries || [];
+                    result = await api('execute_import', entries);
+                }
 
-                if (result.success) {
+                if (result && result.success) {
                     document.getElementById('onboard-done-message').textContent =
                         `Imported ${result.imported} notes into your graph. Welcome to Heartwood.`;
                     onboardSetStep(3);
                 } else {
-                    toast('Import failed: ' + (result.error || 'unknown error'), 'error');
+                    toast('Import failed: ' + (result?.error || 'unknown error'), 'error');
                     btn.textContent = 'Import into Heartwood';
                     btn.disabled = false;
                 }
