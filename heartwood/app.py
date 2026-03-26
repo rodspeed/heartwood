@@ -11,6 +11,7 @@ import yaml
 import time
 import datetime
 import threading
+import uuid
 from pathlib import Path
 from collections import Counter
 from storage_fs import FileSystemBackend
@@ -1892,31 +1893,77 @@ created: {today}
 
         return {'success': True, 'linked': linked}
 
+    # In-memory reasoning job store (mirrors server.py pattern)
+    _reasoning_jobs = {}
+    _reasoning_lock = False
+
     def run_reasoning(self, quiet=False):
-        """Run the reasoning engine and return the report markdown.
-        quiet=True skips Haiku API calls (free, structural only)."""
-        import subprocess
-        reason_script = os.path.join(_app_dir(), 'reason.py')
-        cmd = [sys.executable, reason_script]
-        if quiet:
-            cmd.append('--quiet')
-        try:
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=300,
-                encoding='utf-8', errors='replace'
-            )
-            # Read the generated report from reports/ (not notes/)
-            report_path = os.path.join(_app_dir(), 'reports', 'reasoning-report-latest.md')
-            if os.path.exists(report_path):
-                with open(report_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                _, body = parse_frontmatter(content)
-                return {'success': True, 'report': body, 'log': result.stdout}
-            return {'success': False, 'error': 'Report not generated', 'log': result.stderr}
-        except subprocess.TimeoutExpired:
-            return {'success': False, 'error': 'Reasoning engine timed out (5 min limit)'}
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
+        """Start an async reasoning job. Returns job_id immediately so the UI can poll."""
+        if self._reasoning_lock:
+            return {'error': 'Reasoning job already running'}
+
+        job_id = str(uuid.uuid4())
+        Api._reasoning_jobs[job_id] = {
+            'status': 'pending',
+            'progress': 'Starting...',
+            'current_pass': None,
+            'report': None,
+            'error': None,
+        }
+        Api._reasoning_lock = True
+
+        def _run(jid, q):
+            job = Api._reasoning_jobs[jid]
+            try:
+                import subprocess
+                job['status'] = 'running'
+                job['progress'] = 'Running reasoning engine...'
+                reason_script = os.path.join(_app_dir(), 'reason.py')
+                cmd = [sys.executable, reason_script]
+                if q:
+                    cmd.append('--quiet')
+                result = subprocess.run(
+                    cmd, capture_output=True, text=True, timeout=300,
+                    encoding='utf-8', errors='replace'
+                )
+                report_path = os.path.join(_app_dir(), 'reports', 'reasoning-report-latest.md')
+                if os.path.exists(report_path):
+                    with open(report_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    _, body = parse_frontmatter(content)
+                    job['status'] = 'completed'
+                    job['report'] = body
+                else:
+                    job['status'] = 'failed'
+                    job['error'] = 'Report not generated'
+            except subprocess.TimeoutExpired:
+                job['status'] = 'failed'
+                job['error'] = 'Reasoning engine timed out (5 min limit)'
+            except Exception as e:
+                job['status'] = 'failed'
+                job['error'] = str(e)
+            finally:
+                Api._reasoning_lock = False
+
+        thread = threading.Thread(target=_run, args=(job_id, quiet), daemon=True)
+        thread.start()
+        return {'job_id': job_id}
+
+    def reasoning_status(self, job_id):
+        """Poll reasoning job status."""
+        job = Api._reasoning_jobs.get(job_id)
+        if not job:
+            return {'status': 'failed', 'error': 'Job not found'}
+        response = {
+            'status': job['status'],
+            'progress': job['progress'],
+            'current_pass': job['current_pass'],
+        }
+        if job['status'] == 'completed':
+            response['report'] = job['report']
+        elif job['status'] == 'failed':
+            response['error'] = job['error']
+        return response
 
     # ===== Multi-view Canvases =====
 
