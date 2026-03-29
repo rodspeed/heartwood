@@ -5027,6 +5027,7 @@
         let connectMouseWorld = new THREE.Vector3(); // mouse position in 3D
         let activeTags = new Set();
         let showOrphansOnly = false;
+        let _searchGeneration = 0;
         let saveTimeout = null;
         let editorDirty = false;
 
@@ -7280,6 +7281,10 @@
                     }
                 });
             }
+
+            // Apply legend filter to node visibility so it interacts correctly with other filters
+            const currentSearch = document.getElementById('search-input').value.toLowerCase().trim();
+            filterGraphNodes(currentSearch);
         }
 
         // Wave impulses — traveling light waves along edge ribbons (no sprite particles)
@@ -7407,6 +7412,7 @@
             window.addEventListener('resize', () => {
                 const w = container.clientWidth;
                 const h = container.clientHeight;
+                if (w === 0 || h === 0) return; // skip during CSS transitions to zero
                 camera.aspect = w / h;
                 camera.updateProjectionMatrix();
                 renderer.setSize(w, h);
@@ -8434,6 +8440,12 @@
 
         // ===== Load Graph =====
         async function loadGraph() {
+            // Invalidate pending debounced search callbacks
+            clearTimeout(_searchDebounce);
+            _searchGeneration++;
+            _lastContentResults = null;
+            legendFilterType = null;
+
             // Retry up to 3 times with increasing delay (pywebview race condition)
             for (let attempt = 0; attempt < 3; attempt++) {
                 graphData = await api('scan_notes');
@@ -8477,6 +8489,14 @@
             buildScene();
             initPositions(savedLayout);
             if (defaultSpread !== 1.0) applySpread(defaultSpread);
+
+            // Re-apply semantic edge toggle state after scene rebuild
+            const semToggle = document.getElementById('toggle-semantic');
+            if (semToggle && !semToggle.checked) {
+                for (const edge of edgeObjects) {
+                    if (edge.type === 'semantic') edge.line.visible = false;
+                }
+            }
 
             renderTagFilter(allTags);
             renderNotesList();
@@ -8547,11 +8567,29 @@
                                 }
                             }
                             if (added > 0) {
+                                // Invalidate pending search callbacks before rebuilding
+                                clearTimeout(_searchDebounce);
+                                _searchGeneration++;
+                                _lastContentResults = null;
+
                                 buildScene();
                                 const savedLayout = await api('load_layout') || {};
                                 initPositions(savedLayout);
                                 updateNodeCount();
                                 updateSidebarStats();
+
+                                // Re-apply semantic edge toggle state
+                                const semToggle = document.getElementById('toggle-semantic');
+                                if (semToggle && !semToggle.checked) {
+                                    for (const edge of edgeObjects) {
+                                        if (edge.type === 'semantic') edge.line.visible = false;
+                                    }
+                                }
+
+                                // Re-apply all filter state
+                                renderNotesList();
+                                const _pollSearch = document.getElementById('search-input').value.toLowerCase().trim();
+                                filterGraphNodes(_pollSearch);
                             }
                         }
                         return;
@@ -9285,6 +9323,7 @@
             renderEditorTags(note.tags);
 
             document.getElementById('editor-panel').classList.add('open');
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 260);
             switchEditorMode('edit');
 
             document.querySelectorAll('.note-item').forEach(el => {
@@ -9524,6 +9563,7 @@
                     activeNoteId = null;
                     selectedNodeId = null;
                     document.getElementById('editor-panel').classList.remove('open');
+                    setTimeout(() => window.dispatchEvent(new Event('resize')), 260);
                 }
                 await loadGraph();
             } else {
@@ -9644,6 +9684,8 @@
 
             // For short queries or empty, use client-side filter (fast)
             if (searchQuery.length < 2) {
+                clearTimeout(_searchDebounce);
+                _searchGeneration++;
                 _lastContentResults = null;
                 _renderNotesFromList(graphData.nodes, searchQuery, container);
                 return;
@@ -9652,13 +9694,16 @@
             // For 2+ char queries, do backend content + semantic search (debounced)
             clearTimeout(_searchDebounce);
             _searchDebounce = setTimeout(async () => {
+                const gen = ++_searchGeneration;
                 try {
                     const results = await api('search_notes', searchQuery);
+                    if (gen !== _searchGeneration) return; // stale, discard
                     // For 3+ char queries, also run semantic search and merge results
                     let merged = results;
                     if (searchQuery.length >= 3) {
                         try {
                             const semantic = await api('semantic_search', searchQuery, 10);
+                            if (gen !== _searchGeneration) return; // stale, discard
                             // Merge: add semantic results not already in substring results
                             const existingIds = new Set(results.map(r => r.id));
                             for (const sr of semantic) {
@@ -9673,6 +9718,7 @@
                     const matchedIds = new Set(merged.map(r => r.id));
                     filterGraphNodesByIds(matchedIds, searchQuery);
                 } catch (e) {
+                    if (gen !== _searchGeneration) return;
                     // Fallback to client-side
                     _renderNotesFromList(graphData.nodes, searchQuery, container);
                 }
@@ -9853,6 +9899,22 @@
         }
 
         function filterGraphNodesByIds(matchedIds, searchQuery) {
+            // Pre-compute orphan set when orphan mode active
+            let orphanIds = null;
+            if (showOrphansOnly) {
+                const connectedIds = new Set();
+                for (const edge of graphData.edges) {
+                    if (edge.type !== 'semantic' && edge.type !== 'soul') {
+                        connectedIds.add(edge.source);
+                        connectedIds.add(edge.target);
+                    }
+                }
+                orphanIds = new Set();
+                for (const node of graphData.nodes) {
+                    if (!connectedIds.has(node.id)) orphanIds.add(node.id);
+                }
+            }
+
             for (const id in nodeObjects) {
                 const obj = nodeObjects[id];
                 const tags = obj.data.tags || [];
@@ -9861,21 +9923,47 @@
                 if (activeTags.size > 0 && !tags.some(t => activeTags.has(t))) {
                     visible = false;
                 }
+                if (orphanIds && !orphanIds.has(id)) {
+                    visible = false;
+                }
+                if (legendFilterType !== null) {
+                    const nodeType = obj.data.type || '_untyped';
+                    if (nodeType !== legendFilterType) visible = false;
+                }
 
                 obj.sphere.visible = visible;
                 obj.core.visible = visible;
                 obj.glow.visible = visible;
             }
 
+            // Respect semantic edge toggle when updating edge visibility
+            const _semToggle1 = document.getElementById('toggle-semantic');
+            const _semHidden1 = _semToggle1 && !_semToggle1.checked;
             for (const edge of edgeObjects) {
                 const srcVisible = nodeObjects[edge.sourceId] && nodeObjects[edge.sourceId].sphere.visible;
                 const tgtVisible = nodeObjects[edge.targetId] && nodeObjects[edge.targetId].sphere.visible;
-                edge.line.visible = srcVisible && tgtVisible;
+                edge.line.visible = srcVisible && tgtVisible && !(_semHidden1 && edge.type === 'semantic');
             }
             updateFilterLabels();
         }
 
         function filterGraphNodes(searchQuery) {
+            // Pre-compute orphan set when orphan mode active
+            let orphanIds = null;
+            if (showOrphansOnly) {
+                const connectedIds = new Set();
+                for (const edge of graphData.edges) {
+                    if (edge.type !== 'semantic' && edge.type !== 'soul') {
+                        connectedIds.add(edge.source);
+                        connectedIds.add(edge.target);
+                    }
+                }
+                orphanIds = new Set();
+                for (const node of graphData.nodes) {
+                    if (!connectedIds.has(node.id)) orphanIds.add(node.id);
+                }
+            }
+
             for (const id in nodeObjects) {
                 const obj = nodeObjects[id];
                 const tags = obj.data.tags || [];
@@ -9888,15 +9976,25 @@
                 if (activeTags.size > 0 && !tags.some(t => activeTags.has(t))) {
                     visible = false;
                 }
+                if (orphanIds && !orphanIds.has(id)) {
+                    visible = false;
+                }
+                if (legendFilterType !== null) {
+                    const nodeType = obj.data.type || '_untyped';
+                    if (nodeType !== legendFilterType) visible = false;
+                }
                 obj.sphere.visible = visible;
                 obj.core.visible = visible;
                 obj.glow.visible = visible;
             }
 
+            // Respect semantic edge toggle when updating edge visibility
+            const _semToggle2 = document.getElementById('toggle-semantic');
+            const _semHidden2 = _semToggle2 && !_semToggle2.checked;
             for (const edge of edgeObjects) {
                 const srcVisible = nodeObjects[edge.sourceId] && nodeObjects[edge.sourceId].sphere.visible;
                 const tgtVisible = nodeObjects[edge.targetId] && nodeObjects[edge.targetId].sphere.visible;
-                edge.line.visible = srcVisible && tgtVisible;
+                edge.line.visible = srcVisible && tgtVisible && !(_semHidden2 && edge.type === 'semantic');
             }
             updateFilterLabels();
         }
@@ -9904,7 +10002,7 @@
         // ===== Filter labels: show labels on ALL filtered-in nodes when any filter is active =====
         function updateFilterLabels() {
             const searchQuery = document.getElementById('search-input').value.trim();
-            const filterActive = activeTags.size > 0 || searchQuery.length >= 2;
+            const filterActive = activeTags.size > 0 || searchQuery.length >= 2 || legendFilterType !== null || showOrphansOnly;
 
             for (const id in nodeObjects) {
                 const obj = nodeObjects[id];
@@ -12028,6 +12126,7 @@
                 activeNoteId = null;
                 selectedNodeId = null;
                 document.getElementById('editor-panel').classList.remove('open');
+                setTimeout(() => window.dispatchEvent(new Event('resize')), 260);
                 document.querySelectorAll('.note-item').forEach(el => el.classList.remove('active'));
             });
 
@@ -12291,6 +12390,7 @@
                         activeNoteId = null;
                         selectedNodeId = null;
                         document.getElementById('editor-panel').classList.remove('open');
+                        setTimeout(() => window.dispatchEvent(new Event('resize')), 260);
                     }
                 }
                 if (e.ctrlKey && e.key === 'f') {
